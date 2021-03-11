@@ -9,11 +9,11 @@ import msal
 import requests
 
 
-class Ingress:
+class Ingress:  # pylint: disable=too-few-public-methods
     """
     Contains functions for uploading data to the Osiris-ingress API.
     """
-
+    # pylint: disable=too-many-arguments
     def __init__(self, ingress_url: str, tenant_id: str, client_id: str, client_secret: str, dataset_guid: str):
         """
         :param ingress_url: The URL to the Osiris-ingress API.
@@ -56,7 +56,7 @@ class Ingress:
         try:
             json.load(file)
         except JSONDecodeError:
-            raise ValueError('File is not correctly JSON formatted.')
+            raise ValueError('File is not correctly JSON formatted.') from JSONDecodeError
 
         response = requests.post(
             url=f'{self.ingress_url}/{self.dataset_guid}/json',
