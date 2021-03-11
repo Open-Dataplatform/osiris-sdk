@@ -9,7 +9,7 @@ import msal
 import requests
 
 
-class Ingress:  # pylint: disable=too-few-public-methods
+class Ingress:
     """
     Contains functions for uploading data to the Osiris-ingress API.
     """
@@ -46,9 +46,9 @@ class Ingress:  # pylint: disable=too-few-public-methods
 
     def upload_json_file(self, file: TextIOWrapper, schema_validate: bool) -> int:
         """
-        Uploads the given file to the given <dataset_guid>.
+        Uploads the given JSON file to <dataset_guid>.
 
-        :param file: The file to upload.
+        :param file: The JSON file to upload.
         :param schema_validate: Validate the content of the file? This requires that the validation schema is
                                 supplied to the DataPlatform.
         :return: HTTP status code 201 if the file was uploaded successfully.
@@ -62,6 +62,22 @@ class Ingress:  # pylint: disable=too-few-public-methods
             url=f'{self.ingress_url}/{self.dataset_guid}/json',
             files={'file': file},
             params={'schema_validate': schema_validate},
+            headers={'Authorization': self.__get_access_token()}
+        )
+
+        return response.status_code
+
+    def upload_file(self, file: TextIOWrapper) -> int:
+        """
+        Uploads the given arbitrary file to <dataset_guid>.
+
+        :param file: The arbitrary file to upload.
+        :return: HTTP status code 201 if the file was uploaded successfully.
+        """
+
+        response = requests.post(
+            url=f'{self.ingress_url}/{self.dataset_guid}/json',
+            files={'file': file},
             headers={'Authorization': self.__get_access_token()}
         )
 
