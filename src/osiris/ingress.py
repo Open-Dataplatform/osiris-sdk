@@ -76,7 +76,7 @@ class Ingress:
         """
 
         response = requests.post(
-            url=f'{self.ingress_url}/{self.dataset_guid}/json',
+            url=f'{self.ingress_url}/{self.dataset_guid}',
             files={'file': file},
             headers={'Authorization': self.__get_access_token()}
         )
