@@ -20,7 +20,7 @@ class Ingress:
         :param tenant_id: The tenant ID representing the organisation.
         :param client_id: The client ID (a string representing a GUID).
         :param client_secret: The client secret string.
-        :param guid: The GUID for the dataset.
+        :param dataset_guid: The GUID for the dataset.
         """
         if None in [ingress_url, tenant_id, client_id, client_secret, dataset_guid]:
             raise TypeError
