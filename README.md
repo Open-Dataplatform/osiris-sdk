@@ -90,7 +90,7 @@ The following is a simple example which shows how you can upload files using the
 ```
 from osiris.ingress import Ingress
 
-ingress = Ingress(ingress_url=<INGRESS_URL>
+ingress = Ingress(ingress_url=<INGRESS_URL>,
                   tenant_id=<TENANT_ID>,
                   client_id=<CLIENT_ID>,
                   client_secret=<CLIENT_SECRET>,
