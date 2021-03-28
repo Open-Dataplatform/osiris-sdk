@@ -2,11 +2,13 @@
 Osiris-ingress SDK.
 """
 import json
+from http import HTTPStatus
 from io import TextIOWrapper
 from json.decoder import JSONDecodeError
 
-import msal
 import requests
+
+from src.osiris.azure_client_authorization import ClientAuthorization
 
 
 class Ingress:
@@ -28,30 +30,15 @@ class Ingress:
         self.ingress_url = ingress_url
         self.dataset_guid = dataset_guid
 
-        self.confidential_client_app = msal.ConfidentialClientApplication(
-            authority=f'https://login.microsoftonline.com/{tenant_id}',
-            client_id=client_id,
-            client_credential=client_secret
-        )
+        self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
-        self.scopes = ['https://storage.azure.com/.default']
-
-    def __get_access_token(self) -> str:
-        result = self.confidential_client_app.acquire_token_silent(self.scopes, account=None)
-
-        if not result:
-            result = self.confidential_client_app.acquire_token_for_client(scopes=self.scopes)
-
-        return result['access_token']
-
-    def upload_json_file(self, file: TextIOWrapper, schema_validate: bool) -> int:
+    def upload_json_file(self, file: TextIOWrapper, schema_validate: bool):
         """
         Uploads the given JSON file to <dataset_guid>.
 
         :param file: The JSON file to upload.
         :param schema_validate: Validate the content of the file? This requires that the validation schema is
                                 supplied to the DataPlatform.
-        :return: HTTP status code 201 if the file was uploaded successfully.
         """
         try:
             json.load(file)
@@ -62,23 +49,32 @@ class Ingress:
             url=f'{self.ingress_url}/{self.dataset_guid}/json',
             files={'file': file},
             params={'schema_validate': schema_validate},
-            headers={'Authorization': self.__get_access_token()}
+            headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        return response.status_code
+        self.__check_status_code(response.status_code)
 
-    def upload_file(self, file: TextIOWrapper) -> int:
+    def upload_file(self, file: TextIOWrapper):
         """
         Uploads the given arbitrary file to <dataset_guid>.
 
         :param file: The arbitrary file to upload.
-        :return: HTTP status code 201 if the file was uploaded successfully.
         """
-
         response = requests.post(
             url=f'{self.ingress_url}/{self.dataset_guid}',
             files={'file': file},
-            headers={'Authorization': self.__get_access_token()}
+            headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        return response.status_code
+        self.__check_status_code(response.status_code)
+
+    @staticmethod
+    def __check_status_code(status_code: int):
+        if status_code == HTTPStatus.NOT_FOUND:
+            raise FileNotFoundError('The dataset with GUID doesnt exist or JSON validation schema doesnt exist.')
+
+        if status_code == HTTPStatus.BAD_REQUEST:
+            raise FileNotFoundError('JSON validation error.')
+
+        if status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
+            raise Exception('Internal server error')

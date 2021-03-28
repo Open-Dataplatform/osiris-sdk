@@ -9,6 +9,8 @@
     - [Create a Service Principal and credentials](#create-a-service-principal-and-credentials)
     - [Grant access to the dataset](#grant-access-to-the-dataset)
 - [Usage](#usage)
+  - [Upload](#upload)
+  - [Download](#download)
 
 
 ## Installing
@@ -85,7 +87,9 @@ The application must be granted read- and write-access to the dataset on [the Da
 Add the application you created earlier, using the `<YOUR APP NAME>` name, to the read- and write-access lists.
 
 ## Usage
+Here are some simple examples on how to use the SDK.
 
+### Upload
 The following is a simple example which shows how you can upload files using the Osiris SDK:
 ```
 from osiris.ingress import Ingress
@@ -98,6 +102,31 @@ ingress = Ingress(ingress_url=<INGRESS_URL>,
 
 file = open('test_file.json', 'rb')
 
-status_code = ingress.upload_json_file(file, False)
-print(f'Response status code: {status_code}')
+# Without schema validation and a JSON file
+ingress.upload_json_file(file, False)
+
+# With schema validation and a JSON file
+ingress.upload_json_file(file, True)
+
+# Arbitrary file
+ingress.upload_file(file)
+```
+
+### Download
+The following is a simple example which shows how you can download files using the Osiris SDK:
+```
+from osiris.egress import Egress
+
+egress = Egress(egress_url=<EGRESS_URL>,
+                tenant_id=<TENANT_ID>,
+                client_id=<CLIENT_ID>,
+                client_secret=<CLIENT_SECRET>,
+                dataset_guid=<DATASET_GUID>)
+
+# JSON file
+file_date: date = datetime.utcnow().date(),
+content_json = egress.download_json_file(file_date)
+
+# Arbitrary file
+content_arbitrary = egress.download_file(file_date)
 ```
