@@ -8,7 +8,7 @@ from json.decoder import JSONDecodeError
 
 import requests
 
-from src.osiris.azure_client_authorization import ClientAuthorization
+from .azure_client_authorization import ClientAuthorization
 
 
 class Ingress:
