@@ -1,3 +1,6 @@
 import setuptools
 
-setuptools.setup()
+setuptools.setup(
+    install_requires=["msal", "requests", "azure-identity"]
+)
+
