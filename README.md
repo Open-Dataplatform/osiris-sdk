@@ -130,3 +130,19 @@ content_json = egress.download_json_file(file_date)
 # Arbitrary file
 content_arbitrary = egress.download_file(file_date)
 ```
+
+### Time series pipeline
+The following is a simple example which shows how you can create a time series pipeline.
+```
+from src.osiris.pipeline_timeseries import PipelineTimeSeries
+
+pipeline = PipelineTimeSeries(storage_account_url,
+                              filesystem_name,
+                              tenant_id,
+                              client_id,
+                              client_secret,
+                              source_dataset_guid,
+                              destination_dataset_guid,
+                              date_format,
+                              date_key_name)
+```

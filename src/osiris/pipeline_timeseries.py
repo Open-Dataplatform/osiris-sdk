@@ -1,9 +1,14 @@
+"""
+Module to handle Pipeline for Time series
+"""
 from abc import ABC
 from datetime import datetime
 from typing import List, Tuple
+import json
 
 import pandas as pd
 import apache_beam as beam
+import apache_beam.transforms.core as beam_core
 from apache_beam.options.pipeline_options import PipelineOptions
 from azure.core.exceptions import ResourceNotFoundError
 
@@ -12,7 +17,7 @@ from src.osiris.azure_data_storage import _DataSets
 from src.osiris.file_io_connector import _DatalakeFileSource
 
 
-class _ConvertEventToTuple(beam.DoFn, ABC):
+class _ConvertEventToTuple(beam_core.DoFn, ABC):
     """
     Takes a list of events and converts them to a list of tuples (datetime, event)
     """
@@ -34,7 +39,7 @@ class _ConvertEventToTuple(beam.DoFn, ABC):
         return res
 
 
-class _MergeEventData(beam.DoFn, ABC):
+class _MergeEventData(beam_core.DoFn, ABC):
     """"
     Takes a list of events and merges it with processed events, if such exists, for the particular event time.
     """
@@ -60,7 +65,7 @@ class _MergeEventData(beam.DoFn, ABC):
             return [element]
 
 
-class _UploadEventsToDestination(beam.DoFn, ABC):
+class _UploadEventsToDestination(beam_core.DoFn, ABC):
     """
     Uploads events to destination
     """
@@ -80,7 +85,10 @@ class _UploadEventsToDestination(beam.DoFn, ABC):
 
 
 class PipelineTimeSeries:
-    # pylint: disable=too-many-arguments
+    """
+    Class to create pipelines for time series data
+    """
+    # pylint: disable=too-many-arguments, too-many-instance-attributes, too-few-public-methods
     def __init__(self,
                  storage_account_url: str,
                  filesystem_name: str,
@@ -92,11 +100,15 @@ class PipelineTimeSeries:
                  date_format: str,
                  date_key_name: str):
         """
+        :param storage_account_url: The URL to Azure storage account.
+        :param filesystem_name: The name of the filesystem.
         :param tenant_id: The tenant ID representing the organisation.
         :param client_id: The client ID (a string representing a GUID).
         :param client_secret: The client secret string.
         :param source_dataset_guid: The GUID for the source dataset.
         :param destination_dataset_guid: The GUID for the destination dataset.
+        :param date_format: The date format used in the time series.
+        :param date_key_name: The key in the record containing the date.
         """
         if None in [storage_account_url, filesystem_name, tenant_id, client_id,
                     client_secret, source_dataset_guid, destination_dataset_guid,
@@ -105,27 +117,35 @@ class PipelineTimeSeries:
 
         self.storage_account_url = storage_account_url
         self.filesystem_name = filesystem_name
+        self.tenant_id = tenant_id
+        self.client_id = client_id
+        self.client_secret = client_secret
         self.source_dataset_guid = source_dataset_guid
         self.destination_dataset_guid = destination_dataset_guid
         self.date_format = date_format
         self.date_key_name = date_key_name
 
-        self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
-        self.datasets = _DataSets(storage_account_url, filesystem_name,
-                                  source_dataset_guid, destination_dataset_guid, self.client_auth)
-
     def transform_ingest_time_to_event_time_daily(self, ingest_time: datetime = datetime.utcnow()):
-        datalake_connector = _DatalakeFileSource(ingest_time, self.client_auth.get_credential_sync(),
+        """
+        Creates a pipeline to transform from ingest time to event on a daily time.
+        :param ingest_time: the ingest time to parse - default to current time
+        """
+        client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
+        datalake_connector = _DatalakeFileSource(ingest_time, client_auth.get_credential_sync(),
                                                  self.storage_account_url, self.filesystem_name,
                                                  self.source_dataset_guid)
 
-        with beam.Pipeline(options=PipelineOptions()) as pipeline:
+        datasets = _DataSets(self.storage_account_url, self.filesystem_name,
+                             self.source_dataset_guid, self.destination_dataset_guid, client_auth.get_credential_sync())
+
+        with beam.Pipeline(options=PipelineOptions(['--runner=DirectRunner'])) as pipeline:
             _ = (
                 pipeline
                 | 'read from filesystem' >> beam.io.Read(datalake_connector)  # noqa
-                | 'Convert from JSON' >> beam.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
-                | 'Create tuple for elements' >> beam.ParDo(_ConvertEventToTuple(self.date_key_name, self.date_format))  # noqa
-                | 'Group by date' >> beam.GroupByKey()  # noqa
-                | 'Merge from Storage' >> beam.ParDo(_MergeEventData(self.date_key_name, self.datasets))  # noqa
-                | 'Write to Storage' >> beam.ParDo(_UploadEventsToDestination())
+                | 'Convert from JSON' >> beam_core.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
+                | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple(self.date_key_name,  # noqa
+                                                                                      self.date_format))  # noqa
+                | 'Group by date' >> beam_core.GroupByKey()  # noqa
+                | 'Merge from Storage' >> beam_core.ParDo(_MergeEventData(self.date_key_name, datasets))  # noqa
+                | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
             )

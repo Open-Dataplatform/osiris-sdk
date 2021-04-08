@@ -19,7 +19,7 @@ class AzureCredential:  # pylint: disable=too-few-public-methods
 
     def __init__(self, token: str):
         self.token = token
-        self.expires_on = self.EXPIRES_IN + time.time()
+        self.expires_on = int(self.EXPIRES_IN + time.time())
 
     def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
         """
@@ -40,7 +40,7 @@ class AzureCredentialAIO:  # pylint: disable=too-few-public-methods
 
     def __init__(self, token: str):
         self.token = token
-        self.expires_on = self.EXPIRES_IN + time.time()
+        self.expires_on = int(self.EXPIRES_IN + time.time())
 
     async def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
         """
@@ -69,6 +69,8 @@ class ClientAuthorization:
         )
 
         self.scopes = ['https://storage.azure.com/.default']
+
+        self.result = None
 
     def get_credential_sync(self) -> AzureCredential:
         """
