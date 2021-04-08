@@ -136,13 +136,20 @@ The following is a simple example which shows how you can create a time series p
 ```
 from src.osiris.pipeline_timeseries import PipelineTimeSeries
 
-pipeline = PipelineTimeSeries(storage_account_url,
-                              filesystem_name,
-                              tenant_id,
-                              client_id,
-                              client_secret,
-                              source_dataset_guid,
-                              destination_dataset_guid,
-                              date_format,
-                              date_key_name)
+pipeline = PipelineTimeSeries(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
+                              filesystem_name=<CONTAINER_NAME>,
+                              tenant_id=<TENANT_ID>,
+                              client_id=<CLIENT_ID>,
+                              client_secret=<CLIENT_SECRET>,
+                              source_dataset_guid=<DATASET_GUID>,
+                              destination_dataset_guid=<DATASET_GUID>,
+                              date_format=<DATE_FORMAT_FOR_DATE_FIELD>,  # Example: "%Y-%m-%dT%H:%M:%S.%fZ"
+                              date_key_name=<FIELD_NAME_FOR_EVENT_TIME>)
+
+# Running the pipeline with current time
+pipeline.transform_ingest_time_to_event_time_daily()
+
+# Running the pipeline with specific time
+ingest_time = datetime.datetime(2021, 04, 08, 12, 0, 0)  # April 4th, 2021 at 12:00:00
+pipeline.transform_ingest_time_to_event_time_daily()
 ```
