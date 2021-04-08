@@ -1,3 +1,6 @@
 msal
 requests
 azure-identity
+apache-beam
+azure-storage-file-datalake
+pandas

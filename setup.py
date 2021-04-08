@@ -1,6 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    install_requires=["msal", "requests", "azure-identity"]
+    install_requires=['msal', 'requests', 'azure-identity', 'apache_beam', 'azure-storage-file-datalake',
+                      'pandas']
 )
 
