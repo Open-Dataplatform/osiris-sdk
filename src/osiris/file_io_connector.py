@@ -8,7 +8,7 @@ from apache_beam.io import OffsetRangeTracker, iobase
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.filedatalake import DataLakeServiceClient, DataLakeFileClient, FileSystemClient, PathProperties
 
-from src.osiris.azure_client_authorization import AzureCredential
+from .azure_client_authorization import AzureCredential
 
 
 class _DatalakeFileSource(iobase.BoundedSource):  # noqa
