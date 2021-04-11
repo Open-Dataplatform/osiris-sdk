@@ -1,10 +1,7 @@
 """
 Osiris-ingress SDK.
 """
-import json
 from http import HTTPStatus
-from io import TextIOWrapper
-from json.decoder import JSONDecodeError
 
 import requests
 
@@ -32,7 +29,7 @@ class Ingress:
 
         self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
-    def upload_json_file(self, file: TextIOWrapper, schema_validate: bool):
+    def upload_json_file(self, file, schema_validate: bool):
         """
         Uploads the given JSON file to <dataset_guid>.
 
@@ -40,11 +37,6 @@ class Ingress:
         :param schema_validate: Validate the content of the file? This requires that the validation schema is
                                 supplied to the DataPlatform.
         """
-        try:
-            json.load(file)
-        except JSONDecodeError:
-            raise ValueError('File is not correctly JSON formatted.') from JSONDecodeError
-
         response = requests.post(
             url=f'{self.ingress_url}/{self.dataset_guid}/json',
             files={'file': file},
@@ -54,7 +46,7 @@ class Ingress:
 
         self.__check_status_code(response.status_code)
 
-    def upload_file(self, file: TextIOWrapper):
+    def upload_file(self, file):
         """
         Uploads the given arbitrary file to <dataset_guid>.
 
@@ -74,7 +66,7 @@ class Ingress:
             raise FileNotFoundError('The dataset with GUID doesnt exist or JSON validation schema doesnt exist.')
 
         if status_code == HTTPStatus.BAD_REQUEST:
-            raise FileNotFoundError('JSON validation error.')
+            raise ValueError('JSON validation error.')
 
         if status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
             raise Exception('Internal server error')
