@@ -41,7 +41,7 @@ class Egress:
         """
         response = requests.get(
             url=f'{self.egress_url}/{self.dataset_guid}/json',
-            params={'date': str(file_date)},
+            params={'file_date': str(file_date)},
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
@@ -61,7 +61,7 @@ class Egress:
 
         response = requests.get(
             url=f'{self.egress_url}/{self.dataset_guid}',
-            params={'date': str(file_date)},
+            params={'file_date': str(file_date)},
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
