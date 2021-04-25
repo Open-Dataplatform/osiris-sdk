@@ -1,5 +1,5 @@
 """
-Osiris-ingress SDK.
+Osiris-ingress API.
 """
 from http import HTTPStatus
 

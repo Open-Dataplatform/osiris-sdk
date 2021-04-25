@@ -134,7 +134,7 @@ content_arbitrary = egress.download_file(file_date)
 ### Time series pipeline
 The following is a simple example which shows how you can create a time series pipeline.
 ```
-from src.osiris.pipeline_timeseries import PipelineTimeSeries
+from osiris.pipeline_timeseries import PipelineTimeSeries
 
 pipeline = PipelineTimeSeries(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
                               filesystem_name=<CONTAINER_NAME>,

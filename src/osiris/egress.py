@@ -1,5 +1,5 @@
 """
-Osiris-egress SDK.
+Osiris-egress API.
 """
 import json
 from datetime import date

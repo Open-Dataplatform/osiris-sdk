@@ -1,5 +1,5 @@
 """
-Module to handle Pipeline for Time series
+Module to handle pipeline for timeseries
 """
 from abc import ABC
 from datetime import datetime
