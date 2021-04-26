@@ -5,7 +5,7 @@ from http import HTTPStatus
 
 import requests
 
-from src.osiris.core.azure_client_authorization import ClientAuthorization
+from ..osiris.core.azure_client_authorization import ClientAuthorization
 
 
 class Ingress:
