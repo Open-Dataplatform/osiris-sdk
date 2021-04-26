@@ -9,8 +9,7 @@ from typing import Any
 
 import requests
 
-
-from src.osiris.core.azure_client_authorization import ClientAuthorization
+from ..core.azure_client_authorization import ClientAuthorization
 
 
 class Egress:
@@ -75,7 +74,7 @@ class Egress:
          stored in the folder {guid}/'.
         """
         response = requests.get(
-            url=f'{self.egress_url}/{self.dataset_guid}/state.json',
+            url=f'{self.egress_url}/{self.dataset_guid}/retrieve_state',
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
