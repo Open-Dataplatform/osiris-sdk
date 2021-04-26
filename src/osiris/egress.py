@@ -69,6 +69,23 @@ class Egress:
 
         return response.content
 
+    def retrieve_state(self) -> Any:
+        """
+         Download state.json file from data storage from the given guid. This endpoint expects state.json to be
+         stored in the folder {guid}/'.
+        """
+        response = requests.get(
+            url=f'{self.egress_url}/{self.dataset_guid}/state.json',
+            headers={'Authorization': self.client_auth.get_access_token()}
+        )
+
+        self.__check_status_code(response.status_code)
+
+        try:
+            return json.loads(response.content)
+        except JSONDecodeError:
+            raise ValueError('File is not correctly JSON formatted.') from JSONDecodeError
+
     @staticmethod
     def __check_status_code(status_code: int):
         if status_code == HTTPStatus.NOT_FOUND:
