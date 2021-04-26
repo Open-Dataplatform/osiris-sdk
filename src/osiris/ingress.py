@@ -60,6 +60,20 @@ class Ingress:
 
         self.__check_status_code(response.status_code)
 
+    def save_state(self, file):
+        """
+        Uploads the state file to <dataset_guid>. Can be downloaded from end-point in egress.
+
+        :param file: File to be uploaded to <dataset_guid> and stored as state.json.
+        """
+        response = requests.post(
+            url=f'{self.ingress_url}/{self.dataset_guid}/save_state',
+            files={'file': file},
+            headers={'Authorization': self.client_auth.get_access_token()}
+        )
+
+        self.__check_status_code(response.status_code)
+
     @staticmethod
     def __check_status_code(status_code: int):
         if status_code == HTTPStatus.NOT_FOUND:
