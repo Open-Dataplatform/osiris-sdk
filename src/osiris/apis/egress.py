@@ -10,7 +10,7 @@ from typing import Any
 import requests
 
 
-from .azure_client_authorization import ClientAuthorization
+from src.osiris.core.azure_client_authorization import ClientAuthorization
 
 
 class Egress:

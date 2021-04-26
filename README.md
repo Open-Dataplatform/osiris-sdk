@@ -94,7 +94,7 @@ Here are some simple examples on how to use the SDK.
 ### Upload
 The following is a simple example which shows how you can upload files using the Osiris SDK:
 ```
-from osiris.ingress import Ingress
+from osiris.apis.ingress import Ingress
 
 ingress = Ingress(ingress_url=<INGRESS_URL>,
                   tenant_id=<TENANT_ID>,
@@ -121,7 +121,7 @@ with open('state.json', 'r') as state:
 ### Download
 The following is a simple example which shows how you can download files using the Osiris SDK:
 ```
-from osiris.egress import Egress
+from osiris.apis.egress import Egress
 
 egress = Egress(egress_url=<EGRESS_URL>,
                 tenant_id=<TENANT_ID>,
@@ -143,7 +143,7 @@ state = egress.retrieve_state()
 ### Time series pipeline
 The following is a simple example which shows how you can create a time series pipeline.
 ```
-from osiris.pipeline_timeseries import PipelineTimeSeries
+from osiris.pipelines.pipeline_timeseries import PipelineTimeSeries
 
 pipeline = PipelineTimeSeries(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
                               filesystem_name=<CONTAINER_NAME>,
@@ -167,7 +167,6 @@ pipeline.transform_ingest_time_to_event_time_daily()
 The following is a simple example which shows how you can create a new ingress adapter.
 ```
 import json
-
 from osiris.adapters.ingress_adapter import IngressAdapter
 
 

@@ -12,9 +12,9 @@ import apache_beam.transforms.core as beam_core
 from apache_beam.options.pipeline_options import PipelineOptions
 from azure.core.exceptions import ResourceNotFoundError
 
-from .azure_client_authorization import ClientAuthorization
-from .azure_data_storage import _DataSets
-from .file_io_connector import _DatalakeFileSource
+from src.osiris.core.azure_client_authorization import ClientAuthorization
+from src.osiris.pipelines.azure_data_storage import _DataSets
+from src.osiris.pipelines.file_io_connector import _DatalakeFileSource
 
 
 class _ConvertEventToTuple(beam_core.DoFn, ABC):

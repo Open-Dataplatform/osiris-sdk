@@ -8,7 +8,7 @@ from typing import List, Dict
 from azure.storage.filedatalake import DataLakeFileClient as DataLakeFileClientSync
 
 
-from .azure_client_authorization import AzureCredential
+from src.osiris.core.azure_client_authorization import AzureCredential
 
 
 class _DataSets:
