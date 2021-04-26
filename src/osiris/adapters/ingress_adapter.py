@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from io import BytesIO
 
-from src.osiris.apis.ingress import Ingress
+from ..apis.ingress import Ingress
 
 
 logger = logging.getLogger(__name__)
