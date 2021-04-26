@@ -73,7 +73,7 @@ class IngressAdapter:
         """
         data = self.retrieve_data()
         file = BytesIO(data)
-        file.name = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') + file_extension
+        file.name = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') + '.' + file_extension
 
         try:
             self.ingress.upload_file(file)
