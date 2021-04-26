@@ -13,7 +13,7 @@ from ..ingress import Ingress
 logger = logging.getLogger(__name__)
 
 
-class IngressAdapterFramework:
+class IngressAdapter:
     """
     This class is the basis class for Osiris-Ingress adapters. The class is implemented as a framework
     and it is the responsibility of the specific adapters who extends this class to provide the implementation

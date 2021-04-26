@@ -11,6 +11,8 @@
 - [Usage](#usage)
   - [Upload](#upload)
   - [Download](#download)
+  - [Time series pipeline](#time-series-pipeline)
+  - [Ingress Adapter](#ingress-adapter)
 
 
 ## Installing
@@ -152,4 +154,34 @@ pipeline.transform_ingest_time_to_event_time_daily()
 # Running the pipeline with specific time
 ingest_time = datetime.datetime(2021, 04, 08, 12, 0, 0)  # April 4th, 2021 at 12:00:00
 pipeline.transform_ingest_time_to_event_time_daily()
+```
+
+### Ingress Adapter
+The following is a simple example which shows how you can create a new ingress adapter.
+```
+import json
+
+from osiris.adapters.ingress_adapter import IngressAdapter
+
+
+class MyAdapter(IngressAdapter):
+    def retrieve_data(self) -> bytes:
+        return json.dumps('Hello World').encode('UTF-8')
+
+
+def main():
+    adapter = MyAdapter(ingress_url=<INGRESS_URL>,
+                        tenant_id=<TENANT_ID>,
+                        client_id=<CLIENT_ID>,
+                        client_secret=<CLIENT_SECRET>,
+                        dataset_guid=<DATASET_GUID>)
+
+    # as json data
+    adapter.upload_json_data(schema_validate=False)
+    
+    # or as arbitrary data
+    adapter.upload_data('bin')
+
+if __name__ == '__main__':
+    main()
 ```
