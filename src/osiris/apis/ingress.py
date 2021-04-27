@@ -1,9 +1,11 @@
 """
 Osiris-ingress API.
 """
+import json
 from http import HTTPStatus
 
 import requests
+from requests import Response
 
 from ..core.azure_client_authorization import ClientAuthorization
 
@@ -44,7 +46,7 @@ class Ingress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response.status_code)
+        self.__check_status_code(response)
 
     def upload_file(self, file):
         """
@@ -58,7 +60,7 @@ class Ingress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response.status_code)
+        self.__check_status_code(response)
 
     def save_state(self, file):
         """
@@ -72,15 +74,19 @@ class Ingress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response.status_code)
+        self.__check_status_code(response)
 
     @staticmethod
-    def __check_status_code(status_code: int):
-        if status_code == HTTPStatus.NOT_FOUND:
-            raise FileNotFoundError('The dataset with GUID doesnt exist or JSON validation schema doesnt exist.')
+    def __check_status_code(response: Response):
+        detail = json.loads(response.text)['detail']
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            raise FileNotFoundError(detail)
 
-        if status_code == HTTPStatus.BAD_REQUEST:
-            raise ValueError('JSON validation error.')
+        if response.status_code == HTTPStatus.BAD_REQUEST:
+            raise ValueError(detail)
 
-        if status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
-            raise Exception('Internal server error')
+        if response.status_code == HTTPStatus.FORBIDDEN:
+            raise PermissionError(detail)
+
+        if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
+            raise Exception(detail)
