@@ -149,3 +149,34 @@ class PipelineTimeSeries:
                 | 'Merge from Storage' >> beam_core.ParDo(_MergeEventData(self.date_key_name, datasets))  # noqa
                 | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
             )
+
+    def transform_ingest_time_to_event_time_monthly(self, ingest_time: datetime = datetime.utcnow()):
+        """
+        Creates a pipeline to transform from ingest time to event on a monthly time.
+        :param ingest_time: the ingest time to parse - default to current time
+        """
+        def print_row(x):
+            print(x)
+            return x
+
+        client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
+        datalake_connector = _DatalakeFileSource(ingest_time, client_auth.get_credential_sync(),
+                                                 self.storage_account_url, self.filesystem_name,
+                                                 self.source_dataset_guid)
+
+        datasets = _DataSets(self.storage_account_url, self.filesystem_name,
+                             self.source_dataset_guid, self.destination_dataset_guid, client_auth.get_credential_sync())
+        with beam.Pipeline(options=PipelineOptions(['--runner=DirectRunner'])) as pipeline:
+            _ = (
+                pipeline
+                | 'read from filesystem' >> beam.io.Read(datalake_connector)  # noqa
+                | 'Convert from JSON' >> beam_core.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
+                | 'Print' >> beam_core.Map(print_row)
+                | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple('from_date',  # noqa
+                                                                                      '%Y-%m-%d'))  # noqa
+                | 'Group by date' >> beam_core.GroupByKey()  # noqa
+                # Vi skal have et skridt her, som sikre at vi ikke sletter data, hvis noget eksisterer
+                # og den af en grund ikke får data
+                # | 'Merge from Storage' >> beam_core.ParDo(_MergeEventData(self.date_key_name, datasets))  # noqa
+                | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
+            )
