@@ -78,15 +78,18 @@ class Ingress:
 
     @staticmethod
     def __check_status_code(response: Response):
-        detail = json.loads(response.text)['detail']
         if response.status_code == HTTPStatus.NOT_FOUND:
+            detail = json.loads(response.text)['detail']
             raise FileNotFoundError(detail)
 
         if response.status_code == HTTPStatus.BAD_REQUEST:
+            detail = json.loads(response.text)['detail']
             raise ValueError(detail)
 
         if response.status_code == HTTPStatus.FORBIDDEN:
+            detail = json.loads(response.text)['detail']
             raise PermissionError(detail)
 
         if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
+            detail = json.loads(response.text)['detail']
             raise Exception(detail)
