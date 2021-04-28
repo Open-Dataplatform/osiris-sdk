@@ -1,14 +1,12 @@
 """
 Osiris-egress API.
 """
-import json
 from datetime import date
-from json.decoder import JSONDecodeError
-from http import HTTPStatus
 from typing import Any
 
 import requests
 
+from .dependencies import check_status_code, handle_download_response
 from ..core.azure_client_authorization import ClientAuthorization
 
 
@@ -44,12 +42,7 @@ class Egress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response.status_code)
-
-        try:
-            return json.loads(response.content)
-        except JSONDecodeError:
-            raise ValueError('File is not correctly JSON formatted.') from JSONDecodeError
+        return handle_download_response(response)
 
     def download_file(self, file_date: date) -> bytes:
         """
@@ -64,31 +57,6 @@ class Egress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response.status_code)
+        check_status_code(response)
 
         return response.content
-
-    def retrieve_state(self) -> Any:
-        """
-         Download state.json file from data storage from the given guid. This endpoint expects state.json to be
-         stored in the folder {guid}/'.
-        """
-        response = requests.get(
-            url=f'{self.egress_url}/{self.dataset_guid}/retrieve_state',
-            headers={'Authorization': self.client_auth.get_access_token()}
-        )
-
-        self.__check_status_code(response.status_code)
-
-        try:
-            return json.loads(response.content)
-        except JSONDecodeError:
-            raise ValueError('File is not correctly JSON formatted.') from JSONDecodeError
-
-    @staticmethod
-    def __check_status_code(status_code: int):
-        if status_code == HTTPStatus.NOT_FOUND:
-            raise FileNotFoundError('No file was found for that date or the dataset with GUID doesnt exist.')
-
-        if status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
-            raise Exception('Internal server error.')

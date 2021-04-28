@@ -1,12 +1,11 @@
 """
 Osiris-ingress API.
 """
-import json
-from http import HTTPStatus
+from typing import Any
 
 import requests
-from requests import Response
 
+from .dependencies import check_status_code, handle_download_response
 from ..core.azure_client_authorization import ClientAuthorization
 
 
@@ -46,7 +45,7 @@ class Ingress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response)
+        check_status_code(response)
 
     def upload_file(self, file):
         """
@@ -60,7 +59,7 @@ class Ingress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response)
+        check_status_code(response)
 
     def save_state(self, file):
         """
@@ -74,22 +73,16 @@ class Ingress:
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
-        self.__check_status_code(response)
+        check_status_code(response)
 
-    @staticmethod
-    def __check_status_code(response: Response):
-        if response.status_code == HTTPStatus.NOT_FOUND:
-            detail = json.loads(response.text)['detail']
-            raise FileNotFoundError(detail)
+    def retrieve_state(self) -> Any:
+        """
+         Download state.json file from data storage from the given guid. This endpoint expects state.json to be
+         stored in the folder {guid}/'.
+        """
+        response = requests.get(
+            url=f'{self.ingress_url}/{self.dataset_guid}/retrieve_state',
+            headers={'Authorization': self.client_auth.get_access_token()}
+        )
 
-        if response.status_code == HTTPStatus.BAD_REQUEST:
-            detail = json.loads(response.text)['detail']
-            raise ValueError(detail)
-
-        if response.status_code == HTTPStatus.FORBIDDEN:
-            detail = json.loads(response.text)['detail']
-            raise PermissionError(detail)
-
-        if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
-            detail = json.loads(response.text)['detail']
-            raise Exception(detail)
+        return handle_download_response(response)
