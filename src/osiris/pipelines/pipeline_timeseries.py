@@ -39,6 +39,34 @@ class _ConvertEventToTuple(beam_core.DoFn, ABC):
         return res
 
 
+class _JoinUniqueEventData(beam_core.DoFn, ABC):
+    """"
+    Takes a list of events and join it with processed events, if such exists, for the particular event time.
+    It will only keep unique pairs.
+    """
+    def __init__(self, date_key_name: str, datasets: _DataSets):
+        super().__init__()
+
+        self.date_key_name = date_key_name
+        self.datasets = datasets
+
+    def process(self, element, *args, **kwargs) -> List[Tuple]:
+        """
+        Overwrites beam.DoFn process.
+        """
+        date = element[0]
+        events = element[1]
+        try:
+            processed_events = self.datasets.read_events_from_destination(date)
+            joined_events = events + processed_events
+            # Only keep unique elements in the list
+            joined_events = [i for n, i in enumerate(joined_events) if i not in joined_events[n + 1:]]
+
+            return [(date, joined_events)]
+        except ResourceNotFoundError:
+            return [element]
+
+
 class _MergeEventData(beam_core.DoFn, ABC):
     """"
     Takes a list of events and merges it with processed events, if such exists, for the particular event time.
@@ -172,11 +200,9 @@ class PipelineTimeSeries:
                 | 'read from filesystem' >> beam.io.Read(datalake_connector)  # noqa
                 | 'Convert from JSON' >> beam_core.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
                 | 'Print' >> beam_core.Map(print_row)
-                | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple('from_date',  # noqa
-                                                                                      '%Y-%m-%d'))  # noqa
+                | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple(self.date_key_name,  # noqa
+                                                                                      self.date_format))  # noqa
                 | 'Group by date' >> beam_core.GroupByKey()  # noqa
-                # Vi skal have et skridt her, som sikre at vi ikke sletter data, hvis noget eksisterer
-                # og den af en grund ikke får data
-                # | 'Merge from Storage' >> beam_core.ParDo(_MergeEventData(self.date_key_name, datasets))  # noqa
+                | 'Merge from Storage' >> beam_core.ParDo(_JoinUniqueEventData('from_date', datasets))  # noqa
                 | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
             )
