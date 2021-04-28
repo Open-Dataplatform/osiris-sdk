@@ -116,6 +116,9 @@ ingress.upload_file(file)
 # Save state file
 with open('state.json', 'r') as state:
     ingress.save_state(state)
+
+# Retrieve state
+state = ingress.retrieve_state()
 ```
 
 ### Download
@@ -135,9 +138,6 @@ content_json = egress.download_json_file(file_date)
 
 # Arbitrary file
 content_arbitrary = egress.download_file(file_date)
-
-# Retrieve state
-state = egress.retrieve_state()
 ```
 
 ### Time series pipeline
