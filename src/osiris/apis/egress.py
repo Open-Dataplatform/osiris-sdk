@@ -1,6 +1,7 @@
 """
 Osiris-egress API.
 """
+import logging
 from datetime import date
 from typing import Any
 
@@ -8,6 +9,9 @@ import requests
 
 from .dependencies import check_status_code, handle_download_response
 from ..core.azure_client_authorization import ClientAuthorization
+
+
+logger = logging.getLogger(__name__)
 
 
 class Egress:
@@ -24,7 +28,9 @@ class Egress:
         :param dataset_guid: The GUID for the dataset.
         """
         if None in [egress_url, tenant_id, client_id, client_secret, dataset_guid]:
-            raise TypeError
+            message = 'One or more of the arguments are None.'
+            logger.error(message)
+            raise TypeError(message)
 
         self.egress_url = egress_url
         self.dataset_guid = dataset_guid

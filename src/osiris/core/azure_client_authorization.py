@@ -1,10 +1,14 @@
 """
 Contains functions to authorize a client against Azure storage
 """
+import logging
 import time
 
 import msal
 from azure.core.credentials import AccessToken
+
+
+logger = logging.getLogger(__name__)
 
 
 class AzureCredential:  # pylint: disable=too-few-public-methods
@@ -93,4 +97,9 @@ class ClientAuthorization:
         if not result:
             result = self.confidential_client_app.acquire_token_for_client(scopes=self.scopes)
 
-        return result['access_token']
+        try:
+            return result['access_token']
+        except KeyError as error:
+            message = f'Unauthorized client: {result["error_description"]}'
+            logger.error(message)
+            raise PermissionError(message) from error
