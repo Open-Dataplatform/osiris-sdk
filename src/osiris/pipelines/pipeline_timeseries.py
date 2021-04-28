@@ -183,9 +183,6 @@ class PipelineTimeSeries:
         Creates a pipeline to transform from ingest time to event on a monthly time.
         :param ingest_time: the ingest time to parse - default to current time
         """
-        def print_row(x):
-            print(x)
-            return x
 
         client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
         datalake_connector = _DatalakeFileSource(ingest_time, client_auth.get_credential_sync(),
@@ -199,7 +196,6 @@ class PipelineTimeSeries:
                 pipeline
                 | 'read from filesystem' >> beam.io.Read(datalake_connector)  # noqa
                 | 'Convert from JSON' >> beam_core.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
-                | 'Print' >> beam_core.Map(print_row)
                 | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple(self.date_key_name,  # noqa
                                                                                       self.date_format))  # noqa
                 | 'Group by date' >> beam_core.GroupByKey()  # noqa
