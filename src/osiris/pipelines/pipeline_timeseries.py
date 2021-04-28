@@ -44,10 +44,9 @@ class _JoinUniqueEventData(beam_core.DoFn, ABC):
     Takes a list of events and join it with processed events, if such exists, for the particular event time.
     It will only keep unique pairs.
     """
-    def __init__(self, date_key_name: str, datasets: _DataSets):
+    def __init__(self, datasets: _DataSets):
         super().__init__()
 
-        self.date_key_name = date_key_name
         self.datasets = datasets
 
     def process(self, element, *args, **kwargs) -> List[Tuple]:
@@ -63,32 +62,6 @@ class _JoinUniqueEventData(beam_core.DoFn, ABC):
             joined_events = [i for n, i in enumerate(joined_events) if i not in joined_events[n + 1:]]
 
             return [(date, joined_events)]
-        except ResourceNotFoundError:
-            return [element]
-
-
-class _MergeEventData(beam_core.DoFn, ABC):
-    """"
-    Takes a list of events and merges it with processed events, if such exists, for the particular event time.
-    """
-    def __init__(self, date_key_name: str, datasets: _DataSets):
-        super().__init__()
-
-        self.date_key_name = date_key_name
-        self.datasets = datasets
-
-    def process(self, element, *args, **kwargs) -> List[Tuple]:
-        """
-        Overwrites beam.DoFn process.
-        """
-        date = element[0]
-        events = element[1]
-        try:
-            processed_events = self.datasets.read_events_from_destination(date)
-            merged_events = events + processed_events
-            merged_events = list({event[self.date_key_name]: event for event in merged_events}.values())
-
-            return [(date, merged_events)]
         except ResourceNotFoundError:
             return [element]
 
@@ -174,31 +147,6 @@ class PipelineTimeSeries:
                 | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple(self.date_key_name,  # noqa
                                                                                       self.date_format))  # noqa
                 | 'Group by date' >> beam_core.GroupByKey()  # noqa
-                | 'Merge from Storage' >> beam_core.ParDo(_MergeEventData(self.date_key_name, datasets))  # noqa
-                | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
-            )
-
-    def transform_ingest_time_to_event_time_monthly(self, ingest_time: datetime = datetime.utcnow()):
-        """
-        Creates a pipeline to transform from ingest time to event on a monthly time.
-        :param ingest_time: the ingest time to parse - default to current time
-        """
-
-        client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
-        datalake_connector = _DatalakeFileSource(ingest_time, client_auth.get_credential_sync(),
-                                                 self.storage_account_url, self.filesystem_name,
-                                                 self.source_dataset_guid)
-
-        datasets = _DataSets(self.storage_account_url, self.filesystem_name,
-                             self.source_dataset_guid, self.destination_dataset_guid, client_auth.get_credential_sync())
-        with beam.Pipeline(options=PipelineOptions(['--runner=DirectRunner'])) as pipeline:
-            _ = (
-                pipeline
-                | 'read from filesystem' >> beam.io.Read(datalake_connector)  # noqa
-                | 'Convert from JSON' >> beam_core.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
-                | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple(self.date_key_name,  # noqa
-                                                                                      self.date_format))  # noqa
-                | 'Group by date' >> beam_core.GroupByKey()  # noqa
-                | 'Merge from Storage' >> beam_core.ParDo(_JoinUniqueEventData('from_date', datasets))  # noqa
+                | 'Merge from Storage' >> beam_core.ParDo(_JoinUniqueEventData(datasets))  # noqa
                 | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
             )
