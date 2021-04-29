@@ -167,7 +167,8 @@ class PipelineTimeSeries:
                 | 'read from filesystem' >> beam.io.Read(datalake_connector)  # noqa
                 | 'Convert from JSON' >> beam_core.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
                 | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple(self.date_key_name,  # noqa
-                                                                                      self.date_format))  # noqa
+                                                                                      self.date_format,  # noqa
+                                                                                      self.time_resolution))  # noqa
                 | 'Group by date' >> beam_core.GroupByKey()  # noqa
                 | 'Merge from Storage' >> beam_core.ParDo(_JoinUniqueEventData(datasets))  # noqa
                 | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
