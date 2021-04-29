@@ -5,7 +5,6 @@ import csv
 import json
 from abc import ABC
 from datetime import datetime
-from typing import List, Tuple
 from io import StringIO, BytesIO
 
 import pandas as pd
