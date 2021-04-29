@@ -36,23 +36,23 @@ class _ConvertEventToTuple(beam_core.DoFn, ABC):
         res = []
         for event in element:
             datetime_obj = pd.to_datetime(event[self.date_key_name], format=self.date_format)
-            res.append((self.__convert_datetime_to_string(datetime_obj), event))
+            res.append((self.__convert_datetime_to_time_resolution(datetime_obj), event))
 
         return res
 
-    def __convert_datetime_to_string(self, datetime_obj: datetime):
+    def __convert_datetime_to_time_resolution(self, datetime_obj: datetime):
         if self.time_resolution == TimeResolution.NONE:
-            return ''
+            return datetime_obj.replace(year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         if self.time_resolution == TimeResolution.YEAR:
-            return datetime_obj.strftime('%Y')
+            return datetime_obj.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         if self.time_resolution == TimeResolution.MONTH:
-            return datetime_obj.strftime('%Y-%m')
+            return datetime_obj.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         if self.time_resolution == TimeResolution.DAY:
-            return datetime_obj.strftime('%Y-%m-%d')
+            return datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
         if self.time_resolution == TimeResolution.HOUR:
-            return datetime_obj.strftime('%Y-%m-%dT%H')
+            return datetime_obj.replace(minute=0, second=0, microsecond=0)
         if self.time_resolution == TimeResolution.MINUTE:
-            return datetime_obj.strftime('%Y-%m-%dT%H:%M')
+            return datetime_obj.replace(second=0, microsecond=0)
         message = 'Unknown enum type'
         raise ValueError(message)
 
