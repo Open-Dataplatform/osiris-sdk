@@ -4,7 +4,7 @@ Module to handle datasets IO
 import json
 import logging
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, AnyStr
 
 from azure.core.exceptions import HttpResponseError
 from azure.storage.filedatalake import DataLakeFileClient as DataLakeFileClientSync
@@ -60,6 +60,23 @@ class _DataSets:
         """
         file_path = f'{self.destination}/year={date.year}/month={date.month:02d}/day={date.day:02d}/data.json'
         data = json.dumps(events)
+        with DataLakeFileClientSync(self.account_url,
+                                    self.filesystem_name,
+                                    file_path,
+                                    credential=self.credential) as file_client:
+            try:
+                file_client.upload_data(data, overwrite=True)
+            except HttpResponseError as error:
+                message = f'({type(error).__name__}) Problems uploading data file: {error}'
+                logger.error(message)
+                raise Exception(message) from error
+    
+    def upload_data_to_destination(self, date: datetime, data: AnyStr, filename: str):
+        """
+        Uploads arbitrary `AnyStr` data to destination based on the given date
+        """
+        file_path = f'{self.destination}/year={date.year}/month={date.month:02d}/day={date.day:02d}/{filename}'
+
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name,
                                     file_path,
