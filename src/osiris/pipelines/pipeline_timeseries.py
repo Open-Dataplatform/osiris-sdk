@@ -12,6 +12,7 @@ import apache_beam.transforms.core as beam_core
 from apache_beam.options.pipeline_options import PipelineOptions
 from azure.core.exceptions import ResourceNotFoundError
 
+from .enums import TimeResolution
 from ..core.azure_client_authorization import ClientAuthorization
 from .azure_data_storage import _DataSets
 from .file_io_connector import _DatalakeFileSource
@@ -99,7 +100,8 @@ class PipelineTimeSeries:
                  source_dataset_guid: str,
                  destination_dataset_guid: str,
                  date_format: str,
-                 date_key_name: str):
+                 date_key_name: str,
+                 time_resolution: TimeResolution):
         """
         :param storage_account_url: The URL to Azure storage account.
         :param filesystem_name: The name of the filesystem.
@@ -110,10 +112,11 @@ class PipelineTimeSeries:
         :param destination_dataset_guid: The GUID for the destination dataset.
         :param date_format: The date format used in the time series.
         :param date_key_name: The key in the record containing the date.
+        :param time_resolution: The time resolution to store the data in the destination dataset with.
         """
         if None in [storage_account_url, filesystem_name, tenant_id, client_id,
                     client_secret, source_dataset_guid, destination_dataset_guid,
-                    date_format, date_key_name]:
+                    date_format, date_key_name, time_resolution]:
             raise TypeError
 
         self.storage_account_url = storage_account_url
@@ -125,6 +128,7 @@ class PipelineTimeSeries:
         self.destination_dataset_guid = destination_dataset_guid
         self.date_format = date_format
         self.date_key_name = date_key_name
+        self.time_resolution = time_resolution
 
     def transform_ingest_time_to_event_time_daily(self, ingest_time: datetime = datetime.utcnow()):
         """
@@ -137,7 +141,8 @@ class PipelineTimeSeries:
                                                  self.source_dataset_guid)
 
         datasets = _DataSets(self.storage_account_url, self.filesystem_name,
-                             self.source_dataset_guid, self.destination_dataset_guid, client_auth.get_credential_sync())
+                             self.source_dataset_guid, self.destination_dataset_guid,
+                             client_auth.get_credential_sync(), self.time_resolution)
 
         with beam.Pipeline(options=PipelineOptions(['--runner=DirectRunner'])) as pipeline:
             _ = (
