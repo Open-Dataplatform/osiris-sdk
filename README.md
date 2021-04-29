@@ -1,7 +1,7 @@
 # osiris-sdk <!-- omit in toc -->
 
 - [Installing](#installing)
-- [Getting started](#getting_started)
+- [Getting Started](#getting-started)
 - [Data application registration](#data-application-registration)
   - [Prerequisites](#prerequisites)
   - [Steps](#steps)
@@ -12,12 +12,13 @@
   - [Upload](#upload)
   - [Download](#download)
   - [Time series pipeline](#time-series-pipeline)
+  - [Data conversion pipeline](#data-conversion-pipeline)
   - [Ingress Adapter](#ingress-adapter)
 
 
 ## Installing
 
-```shell
+``` shell
 $ pip install osiris-sdk
 ```
 The SDK requires Python 3.
@@ -93,7 +94,7 @@ Here are some simple examples on how to use the SDK.
 
 ### Upload
 The following is a simple example which shows how you can upload files using the Osiris SDK:
-```
+``` python
 from osiris.apis.ingress import Ingress
 
 ingress = Ingress(ingress_url=<INGRESS_URL>,
@@ -123,7 +124,7 @@ state = ingress.retrieve_state()
 
 ### Download
 The following is a simple example which shows how you can download files using the Osiris SDK:
-```
+``` python
 from osiris.apis.egress import Egress
 
 egress = Egress(egress_url=<EGRESS_URL>,
@@ -142,7 +143,7 @@ content_arbitrary = egress.download_file(file_date)
 
 ### Time series pipeline
 The following is a simple example which shows how you can create a time series pipeline.
-```
+``` python
 from osiris.pipelines.pipeline_timeseries import PipelineTimeSeries
 
 pipeline = PipelineTimeSeries(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
@@ -160,12 +161,34 @@ pipeline.transform_ingest_time_to_event_time_daily()
 
 # Running the pipeline with specific time
 ingest_time = datetime.datetime(2021, 04, 08, 12, 0, 0)  # April 4th, 2021 at 12:00:00
-pipeline.transform_ingest_time_to_event_time_daily()
+pipeline.transform_ingest_time_to_event_time_daily(ingest_time=ingest_time)
+```
+
+### Data conversion pipeline
+This is an example of using the data conversion classes to transform structured data into other formats
+of structured data.
+``` python
+from osiris.pipelines.pipeline_conversion import PipelineConversion
+
+pipeline = PipelineConversion(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
+                              filesystem_name=<CONTAINER_NAME>,
+                              tenant_id=<TENANT_ID>,
+                              client_id=<CLIENT_ID>,
+                              client_secret=<CLIENT_SECRET>,
+                              source_dataset_guid=<DATASET_GUID>,
+                              destination_dataset_guid=<DATASET_GUID>)
+
+# Running the pipeline with current time, using method defaults
+pipeline.transform_convert_csv_to_json()
+
+# Running the pipeline with specific time and tab as CSV separator
+ingest_time = datetime.datetime(2021, 04, 08, 12, 0, 0)  # April 4th, 2021 at 12:00:00
+pipeline.transform_convert_csv_to_json(ingest_time=ingest_time, separator='\t')
 ```
 
 ### Ingress Adapter
 The following is a simple example which shows how you can create a new ingress adapter.
-```
+``` python
 import json
 from osiris.adapters.ingress_adapter import IngressAdapter
 
