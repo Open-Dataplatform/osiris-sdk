@@ -18,7 +18,7 @@
 
 ## Installing
 
-```shell
+``` shell
 $ pip install osiris-sdk
 ```
 The SDK requires Python 3.
@@ -94,7 +94,7 @@ Here are some simple examples on how to use the SDK.
 
 ### Upload
 The following is a simple example which shows how you can upload files using the Osiris SDK:
-```
+``` python
 from osiris.apis.ingress import Ingress
 
 ingress = Ingress(ingress_url=<INGRESS_URL>,
@@ -124,7 +124,7 @@ state = ingress.retrieve_state()
 
 ### Download
 The following is a simple example which shows how you can download files using the Osiris SDK:
-```
+``` python
 from osiris.apis.egress import Egress
 
 egress = Egress(egress_url=<EGRESS_URL>,
@@ -143,7 +143,7 @@ content_arbitrary = egress.download_file(file_date)
 
 ### Time series pipeline
 The following is a simple example which shows how you can create a time series pipeline.
-```
+``` python
 from osiris.pipelines.pipeline_timeseries import PipelineTimeSeries
 
 pipeline = PipelineTimeSeries(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
@@ -167,7 +167,7 @@ pipeline.transform_ingest_time_to_event_time_daily(ingest_time=ingest_time)
 ### Data conversion pipeline
 This is an example of using the data conversion classes to transform structured data into other formats
 of structured data.
-```
+``` python
 from osiris.pipelines.pipeline_conversion import PipelineConversion
 
 pipeline = PipelineConversion(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
@@ -188,7 +188,7 @@ pipeline.transform_convert_csv_to_json(ingest_time=ingest_time, separator='\t')
 
 ### Ingress Adapter
 The following is a simple example which shows how you can create a new ingress adapter.
-```
+``` python
 import json
 from osiris.adapters.ingress_adapter import IngressAdapter
 
