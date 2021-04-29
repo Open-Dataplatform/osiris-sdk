@@ -48,13 +48,9 @@ class _DataSets:
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name, file_path,
                                     credential=self.credential) as file_client:
-            try:
-                file_content = file_client.download_file().readall()
-                return json.loads(file_content)
-            except HttpResponseError as error:
-                message = f'({type(error).__name__}) Problems downloading data file: {error}'
-                logger.error(message)
-                raise Exception(message) from error
+
+            file_content = file_client.download_file().readall()
+            return json.loads(file_content)
 
     def upload_events_to_destination_json(self, date: datetime, events: List[Dict]):
         """
