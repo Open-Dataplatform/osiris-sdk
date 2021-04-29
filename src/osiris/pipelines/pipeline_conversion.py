@@ -40,7 +40,7 @@ class _LoadCSVToDF(beam_core.DoFn, ABC):
         return [df]
 
 
-class _ConvertDFToParquet(beam.DoFn):
+class _ConvertDFToParquet(beam_core.DoFn, ABC):
     """
     Converts `pandas.DataFrame` elements into Parquet file format (stored as `io.BytesIO`).
     """
@@ -51,7 +51,7 @@ class _ConvertDFToParquet(beam.DoFn):
         return [parquet_file]
 
 
-class _ConvertDFToJSON(beam.DoFn):
+class _ConvertDFToJSON(beam_core.DoFn, ABC):
     """
     Converts `pandas.DataFrame` elements into JSON records.
     """
@@ -102,7 +102,7 @@ class ConvertCSVToParquet(beam_core.DoFn, ABC):
         return [parquet_file]
 
 
-class _CombineDataFrames(beam.CombineFn):
+class _CombineDataFrames(beam_core.CombineFn, ABC):
     """
     Combines multiple `pd.DataFrame` into a single `pd.DataFrame`.
     """
@@ -119,7 +119,7 @@ class _CombineDataFrames(beam.CombineFn):
         return accumulator
 
 
-class _UploadDataToDestination(beam.DoFn):
+class _UploadDataToDestination(beam_core.DoFn, ABC):
     """
     Uploads arbitrary data to destination. 
     The optional filename prefix and suffix is inserted as:
