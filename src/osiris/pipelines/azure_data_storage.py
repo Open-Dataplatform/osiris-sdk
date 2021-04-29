@@ -91,7 +91,7 @@ class _DataSets:
                 raise Exception(message) from error
 
     def __get_file_path_with_respect_to_time_resolution(self, date: datetime, filename: str):
-        if self.time_resolution == TimeResolution.YEAR:
+        if self.time_resolution == TimeResolution.NONE:
             return f'{self.destination}/{filename}'
         if self.time_resolution == TimeResolution.YEAR:
             return f'{self.destination}/year={date.year}/{filename}'
