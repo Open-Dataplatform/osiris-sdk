@@ -83,7 +83,7 @@ class _UploadEventsToDestination(beam_core.DoFn, ABC):
         date = element[0]
         events = element[1]
 
-        self.datasets.upload_events_to_destination(date, events)
+        self.datasets.upload_events_to_destination_json(date, events)
 
 
 class PipelineTimeSeries:
@@ -130,7 +130,7 @@ class PipelineTimeSeries:
         self.date_key_name = date_key_name
         self.time_resolution = time_resolution
 
-    def transform_ingest_time_to_event_time_daily(self, ingest_time: datetime = datetime.utcnow()):
+    def transform_ingest_time_to_event_time(self, ingest_time: datetime = datetime.utcnow()):
         """
         Creates a pipeline to transform from ingest time to event on a daily time.
         :param ingest_time: the ingest time to parse - default to current time

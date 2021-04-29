@@ -56,7 +56,7 @@ class _DataSets:
                 logger.error(message)
                 raise Exception(message) from error
 
-    def upload_events_to_destination(self, date: datetime, events: List[Dict]):
+    def upload_events_to_destination_json(self, date: datetime, events: List[Dict]):
         """
         Uploads events to destination based on the given date
         """
