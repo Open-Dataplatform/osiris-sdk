@@ -2,7 +2,6 @@
 Module for handling data format conversions
 """
 import csv
-import json
 from abc import ABC
 from datetime import datetime
 from io import StringIO, BytesIO
@@ -11,7 +10,6 @@ import pandas as pd
 import apache_beam as beam
 import apache_beam.transforms.core as beam_core
 from apache_beam.options.pipeline_options import PipelineOptions
-from azure.core.exceptions import ResourceNotFoundError
 
 from ..core.azure_client_authorization import ClientAuthorization
 from .azure_data_storage import _DataSets
@@ -202,8 +200,6 @@ class PipelineConversion:
                 | beam.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,
                                           quoting=quoting, skipinitialspace=skipinitialspace))
                 | beam.CombineGlobally(_CombineDataFrames())
-                # | beam.ParDo(_ConvertDFToParquet())
-                # | beam.ParDo(_UploadDataToDestination(ingress_time, datasets, 'snappy.parquet'))
                 | beam.ParDo(_ConvertDFToJSON())
                 | beam.ParDo(_UploadDataToDestination(ingest_time, datasets, 'json'))
             )
