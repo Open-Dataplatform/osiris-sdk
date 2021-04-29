@@ -2,7 +2,7 @@
 Osiris-egress API.
 """
 import logging
-from datetime import date
+from datetime import datetime
 from typing import Any
 
 import requests
@@ -37,7 +37,7 @@ class Egress:
 
         self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
-    def download_json_file(self, file_date: date) -> Any:
+    def download_json_file(self, file_date: datetime) -> Any:
         """
          Download JSON file from data storage from the given date (UTC). This endpoint expects data to be
          stored in {guid}/year={date.year:02d}/month={date.month:02d}/day={date.day:02d}/data.json'.
@@ -50,7 +50,7 @@ class Egress:
 
         return handle_download_response(response)
 
-    def download_file(self, file_date: date) -> bytes:
+    def download_file(self, file_date: datetime) -> bytes:
         """
            Download file from data storage from the given date (UTC). This endpoint expects data to be
            stored in the folder {guid}/year={date.year:02d}/month={date.month:02d}/day={date.day:02d}/, but doesnt make
