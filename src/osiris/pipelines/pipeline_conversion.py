@@ -79,7 +79,7 @@ class _ConvertCSVToJSON(beam_core.DoFn, ABC):
         return [df.to_json(orient='records')]
 
 
-class ConvertCSVToParquet(beam_core.DoFn, ABC):
+class _ConvertCSVToParquet(beam_core.DoFn, ABC):
     """
     Converts CSV data (as `str`) into Parquet file format (stored as `io.BytesIO`).
     """
@@ -183,6 +183,10 @@ class PipelineConversion:
         Creates a pipeline to convert CSV data into JSON format.
         Writes the destination file to the same folder structure as the source file.
         :param ingest_time: the ingest time to parse - defaults to current time
+        :param separator: the separator char to pass to `pandas.read_csv`
+        :param quotechar: the quote char to pass to `pandas.read_csv`
+        :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
+        :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
         """
         client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
         datalake_connector = _DatalakeFileSource(ingest_time, client_auth.get_credential_sync(),
@@ -214,6 +218,10 @@ class PipelineConversion:
         Creates a pipeline to convert CSV data into JSON format.
         Writes the destination file to the same folder structure as the source file.
         :param ingest_time: the ingest time to parse - defaults to current time
+        :param separator: the separator char to pass to `pandas.read_csv`
+        :param quotechar: the quote char to pass to `pandas.read_csv`
+        :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
+        :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
         """
         client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
         datalake_connector = _DatalakeFileSource(ingest_time, client_auth.get_credential_sync(),
