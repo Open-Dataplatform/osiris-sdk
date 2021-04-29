@@ -22,11 +22,12 @@ class _ConvertEventToTuple(beam_core.DoFn, ABC):
     """
     Takes a list of events and converts them to a list of tuples (datetime, event)
     """
-    def __init__(self, date_key_name: str, date_format: str):
+    def __init__(self, date_key_name: str, date_format: str, time_resolution: TimeResolution):
         super().__init__()
 
         self.date_key_name = date_key_name
         self.date_format = date_format
+        self.time_resolution = time_resolution
 
     def process(self, element, *args, **kwargs) -> List:
         """
@@ -35,9 +36,25 @@ class _ConvertEventToTuple(beam_core.DoFn, ABC):
         res = []
         for event in element:
             datetime_obj = pd.to_datetime(event[self.date_key_name], format=self.date_format)
-            res.append((datetime_obj.date(), event))
+            res.append((self.__convert_datetime_to_string(datetime_obj), event))
 
         return res
+
+    def __convert_datetime_to_string(self, datetime_obj: datetime):
+        if self.time_resolution == TimeResolution.NONE:
+            return ''
+        if self.time_resolution == TimeResolution.YEAR:
+            return datetime_obj.strftime('%Y')
+        if self.time_resolution == TimeResolution.MONTH:
+            return datetime_obj.strftime('%Y-%m')
+        if self.time_resolution == TimeResolution.DAY:
+            return datetime_obj.strftime('%Y-%m-%d')
+        if self.time_resolution == TimeResolution.HOUR:
+            return datetime_obj.strftime('%Y-%m-%dT%H')
+        if self.time_resolution == TimeResolution.MINUTE:
+            return datetime_obj.strftime('%Y-%m-%dT%H:%M')
+        message = 'Unknown enum type'
+        raise ValueError(message)
 
 
 class _JoinUniqueEventData(beam_core.DoFn, ABC):
