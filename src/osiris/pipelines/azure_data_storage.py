@@ -43,7 +43,7 @@ class _DataSets:
         Read events from destination corresponding a given date
         """
 
-        file_path = f'{self.destination}/year={date.year}/month={date.month:02d}/day={date.day:02d}/data.json'
+        file_path = self.__get_file_path_with_respect_to_time_resolution(date, 'data.json')
 
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name, file_path,
