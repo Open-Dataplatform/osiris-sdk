@@ -12,7 +12,7 @@ import apache_beam.transforms.core as beam_core
 from apache_beam.options.pipeline_options import PipelineOptions
 from azure.core.exceptions import ResourceNotFoundError
 
-from .enums import TimeResolution
+from ..core.enums import TimeResolution
 from ..core.azure_client_authorization import ClientAuthorization
 from .azure_data_storage import _DataSets
 from .file_io_connector import _DatalakeFileSource

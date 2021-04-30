@@ -9,7 +9,7 @@ from typing import List, Dict, AnyStr
 from azure.core.exceptions import HttpResponseError
 from azure.storage.filedatalake import DataLakeFileClient as DataLakeFileClientSync
 
-from .enums import TimeResolution
+from ..core.enums import TimeResolution
 from ..core.azure_client_authorization import AzureCredential
 
 
