@@ -22,11 +22,12 @@ class _ConvertEventToTuple(beam_core.DoFn, ABC):
     """
     Takes a list of events and converts them to a list of tuples (datetime, event)
     """
-    def __init__(self, date_key_name: str, date_format: str):
+    def __init__(self, date_key_name: str, date_format: str, time_resolution: TimeResolution):
         super().__init__()
 
         self.date_key_name = date_key_name
         self.date_format = date_format
+        self.time_resolution = time_resolution
 
     def process(self, element, *args, **kwargs) -> List:
         """
@@ -35,9 +36,25 @@ class _ConvertEventToTuple(beam_core.DoFn, ABC):
         res = []
         for event in element:
             datetime_obj = pd.to_datetime(event[self.date_key_name], format=self.date_format)
-            res.append((datetime_obj.date(), event))
+            res.append((self.__convert_datetime_to_time_resolution(datetime_obj), event))
 
         return res
+
+    def __convert_datetime_to_time_resolution(self, datetime_obj: datetime):
+        if self.time_resolution == TimeResolution.NONE:
+            return datetime_obj.replace(year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        if self.time_resolution == TimeResolution.YEAR:
+            return datetime_obj.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        if self.time_resolution == TimeResolution.MONTH:
+            return datetime_obj.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if self.time_resolution == TimeResolution.DAY:
+            return datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+        if self.time_resolution == TimeResolution.HOUR:
+            return datetime_obj.replace(minute=0, second=0, microsecond=0)
+        if self.time_resolution == TimeResolution.MINUTE:
+            return datetime_obj.replace(second=0, microsecond=0)
+        message = 'Unknown enum type'
+        raise ValueError(message)
 
 
 class _JoinUniqueEventData(beam_core.DoFn, ABC):
@@ -150,7 +167,8 @@ class PipelineTimeSeries:
                 | 'read from filesystem' >> beam.io.Read(datalake_connector)  # noqa
                 | 'Convert from JSON' >> beam_core.Map(lambda x: json.loads(x))  # noqa pylint: disable=unnecessary-lambda
                 | 'Create tuple for elements' >> beam_core.ParDo(_ConvertEventToTuple(self.date_key_name,  # noqa
-                                                                                      self.date_format))  # noqa
+                                                                                      self.date_format,  # noqa
+                                                                                      self.time_resolution))  # noqa
                 | 'Group by date' >> beam_core.GroupByKey()  # noqa
                 | 'Merge from Storage' >> beam_core.ParDo(_JoinUniqueEventData(datasets))  # noqa
                 | 'Write to Storage' >> beam_core.ParDo(_UploadEventsToDestination(datasets))  # noqa
