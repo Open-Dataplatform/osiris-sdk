@@ -11,7 +11,7 @@ from azure.storage.filedatalake import DataLakeFileClient as DataLakeFileClientS
 
 from ..core.enums import TimeResolution
 from ..core.azure_client_authorization import AzureCredential
-
+from ..core.io import get_file_path_with_respect_to_time_resolution
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,8 @@ class _DataSets:
         Read events from destination corresponding a given date
         """
 
-        file_path = self.__get_file_path_with_respect_to_time_resolution(date, 'data.json')
+        file_path = f'{self.destination}/ \
+                    {get_file_path_with_respect_to_time_resolution(date, self.time_resolution, "data.json")}'
 
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name, file_path,
@@ -56,7 +57,9 @@ class _DataSets:
         """
         Uploads events to destination based on the given date
         """
-        file_path = self.__get_file_path_with_respect_to_time_resolution(date, 'data.json')
+        file_path = f'{self.destination}/ \
+                    {get_file_path_with_respect_to_time_resolution(date, self.time_resolution, "data.json")}'
+
         data = json.dumps(events)
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name,
@@ -73,7 +76,8 @@ class _DataSets:
         """
         Uploads arbitrary `AnyStr` data to destination based on the given date
         """
-        file_path = self.__get_file_path_with_respect_to_time_resolution(date, filename)
+        file_path = f'{self.destination}/ \
+                    {get_file_path_with_respect_to_time_resolution(date, self.time_resolution, filename)}'
 
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name,
@@ -85,23 +89,3 @@ class _DataSets:
                 message = f'({type(error).__name__}) Problems uploading data file: {error}'
                 logger.error(message)
                 raise Exception(message) from error
-
-    def __get_file_path_with_respect_to_time_resolution(self, date: datetime, filename: str):
-        if self.time_resolution == TimeResolution.NONE:
-            return f'{self.destination}/{filename}'
-        if self.time_resolution == TimeResolution.YEAR:
-            return f'{self.destination}/year={date.year}/{filename}'
-        if self.time_resolution == TimeResolution.MONTH:
-            return f'{self.destination}/year={date.year}/month={date.month:02d}/{filename}'
-        if self.time_resolution == TimeResolution.DAY:
-            return f'{self.destination}/year={date.year}/month={date.month:02d}/day={date.day:02d}/{filename}'
-        if self.time_resolution == TimeResolution.HOUR:
-            return f'{self.destination}/year={date.year}/month={date.month:02d}/day={date.day:02d}/' + \
-                   f'hour={date.hour:02d}/{filename}'
-        if self.time_resolution == TimeResolution.MINUTE:
-            return f'{self.destination}/year={date.year}/month={date.month:02d}/day={date.day:02d}/' + \
-                   f'hour={date.hour:02d}/minute={date.minute:02d}/{filename}'
-
-        message = '(ValueError) Unknown time resolution giving.'
-        logger.error(message)
-        raise ValueError(message)
