@@ -37,17 +37,21 @@ class Egress:
 
         self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
-    def download_json_file(self, file_date: datetime) -> Any:
+    def download_json_file(self, from_date: datetime, to_date: datetime = None, time_resolution: str = 'DAY') -> Any:
         """
          Download JSON file from data storage from the given date (UTC). This endpoint expects data to be
          stored in {guid}/year={date.year:02d}/month={date.month:02d}/day={date.day:02d}/data.json'.
         """
+        if to_date:
+            params = {'from_date': str(from_date), 'to_date': str(to_date), 'time_resolution': time_resolution}
+        else:
+            params = {'from_date': str(from_date), 'time_resolution': time_resolution}
+
         response = requests.get(
             url=f'{self.egress_url}/{self.dataset_guid}/json',
-            params={'file_date': str(file_date)},
+            params=params,
             headers={'Authorization': self.client_auth.get_access_token()}
         )
-
         return handle_download_response(response)
 
     def download_file(self, file_date: datetime) -> bytes:
