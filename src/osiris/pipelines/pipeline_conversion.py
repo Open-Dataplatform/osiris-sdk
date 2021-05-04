@@ -30,22 +30,22 @@ class _LoadCSVToDF(beam_core.DoFn, ABC):
         self.quoting = quoting
         self.skipinitialspace = skipinitialspace
 
-    def process(self, element):
-        df = pd.read_csv(
+    def process(self, element, *args, **kwargs):
+        dataframe = pd.read_csv(
             StringIO(element),
             sep=self.separator,
             quotechar=self.quotechar,
             quoting=self.quoting,
             skipinitialspace=self.skipinitialspace
         )
-        return [df]
+        return [dataframe]
 
 
 class _ConvertDFToParquet(beam_core.DoFn, ABC):
     """
     Converts `pandas.DataFrame` elements into Parquet file format (stored as `io.BytesIO`).
     """
-    def process(self, element):
+    def process(self, element, *args, **kwargs):
         parquet_file = BytesIO()
         element.to_parquet(parquet_file, engine='pyarrow', compression='snappy')
         parquet_file.seek(0)
@@ -56,7 +56,7 @@ class _ConvertDFToJSON(beam_core.DoFn, ABC):
     """
     Converts `pandas.DataFrame` elements into JSON records.
     """
-    def process(self, element):
+    def process(self, element, *args, **kwargs):
         return [element.to_json(orient='records')]
 
 
@@ -69,15 +69,15 @@ class _ConvertCSVToJSON(beam_core.DoFn, ABC):
         self.separator = separator
         self.quotechar = quotechar
 
-    def process(self, element):
-        df = pd.read_csv(
+    def process(self, element, *args, **kwargs):
+        dataframe = pd.read_csv(
             StringIO(element),
             sep=self.separator,
             quotechar=self.quotechar,
             quoting=csv.QUOTE_NONNUMERIC,
             skipinitialspace=True
         )
-        return [df.to_json(orient='records')]
+        return [dataframe.to_json(orient='records')]
 
 
 class _ConvertCSVToParquet(beam_core.DoFn, ABC):
@@ -89,8 +89,8 @@ class _ConvertCSVToParquet(beam_core.DoFn, ABC):
         self.separator = separator
         self.quotechar = quotechar
 
-    def process(self, element):
-        df = pd.read_csv(
+    def process(self, element, *args, **kwargs):
+        dataframe = pd.read_csv(
             StringIO(element),
             sep=self.separator,
             quotechar=self.quotechar,
@@ -98,7 +98,7 @@ class _ConvertCSVToParquet(beam_core.DoFn, ABC):
             skipinitialspace=True
         )
         parquet_file = BytesIO()
-        df.to_parquet(parquet_file, engine='pyarrow', compression='snappy')
+        dataframe.to_parquet(parquet_file, engine='pyarrow', compression='snappy')
         parquet_file.seek(0)
         return [parquet_file]
 
@@ -107,28 +107,33 @@ class _CombineDataFrames(beam_core.CombineFn, ABC):
     """
     Combines multiple `pd.DataFrame` into a single `pd.DataFrame`.
     """
-    def create_accumulator(self):
+    def create_accumulator(self, *args, **kwargs):
         return pd.DataFrame()
-    
-    def add_input(self, mutable_accumulator, element):
+
+    def add_input(self, mutable_accumulator, element, *args, **kwargs):
         return mutable_accumulator.append(element, ignore_index=True)
-    
-    def merge_accumulators(self, accumulators):
+
+    def merge_accumulators(self, accumulators, *args, **kwargs):
         return pd.concat(accumulators, axis=0, ignore_index=True)
-    
-    def extract_output(self, accumulator):
+
+    def extract_output(self, accumulator, *args, **kwargs):
         return accumulator
 
 
 class _UploadDataToDestination(beam_core.DoFn, ABC):
     """
-    Uploads arbitrary data to destination. 
+    Uploads arbitrary data to destination.
     The optional filename prefix and suffix is inserted as:
 
         `{file_prefix}{filename}{file_suffix}`
     """
-
-    def __init__(self, date: datetime, datasets: _DataSets, filename: str = 'data', file_prefix: str = '', file_suffix: str = ''):
+    # pylint: disable=too-many-arguments
+    def __init__(self,
+                 date: datetime,
+                 datasets: _DataSets,
+                 filename: str = 'data',
+                 file_prefix: str = '',
+                 file_suffix: str = ''):
         super().__init__()
         self.date = date
         self.datasets = datasets
@@ -145,6 +150,7 @@ class PipelineConversion:
     """
     Class to create pipelines for generic data conversion.
     """
+    # pylint: disable=too-many-arguments, too-many-instance-attributes
     def __init__(self,
                  storage_account_url: str,
                  filesystem_name: str,
@@ -177,11 +183,12 @@ class PipelineConversion:
         self.destination_dataset_guid = destination_dataset_guid
         self.time_resolution = time_resolution
 
+    # pylint: disable=too-many-arguments
     def transform_convert_csv_to_json(self,
                                       ingest_time: datetime = datetime.utcnow(),
                                       separator: str = ',',
                                       quotechar: str = '"',
-                                      quoting: int =csv.QUOTE_NONNUMERIC,
+                                      quoting: int = csv.QUOTE_NONNUMERIC,
                                       skipinitialspace: bool = True):
         """
         Creates a pipeline to convert CSV data into JSON format.
@@ -200,19 +207,20 @@ class PipelineConversion:
         datasets = _DataSets(self.storage_account_url, self.filesystem_name,
                              self.source_dataset_guid, self.destination_dataset_guid,
                              client_auth.get_credential_sync(), self.time_resolution)
-        
+
         with beam.Pipeline(options=PipelineOptions()) as pipeline:
             _ = (
-                pipeline 
-                | 'Read from FS' >> beam.io.Read(datalake_connector)
-                | 'Decode to str' >> beam.Map(lambda x: x.decode())
-                | beam.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,
-                                          quoting=quoting, skipinitialspace=skipinitialspace))
-                | beam.CombineGlobally(_CombineDataFrames())
-                | beam.ParDo(_ConvertDFToJSON())
-                | beam.ParDo(_UploadDataToDestination(ingest_time, datasets, 'json'))
+                pipeline
+                | 'Read from FS' >> beam.io.Read(datalake_connector)    # noqa
+                | 'Decode to str' >> beam_core.Map(lambda x: x.decode())     # noqa
+                | beam_core.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,     # noqa
+                                               quoting=quoting, skipinitialspace=skipinitialspace))
+                | beam_core.CombineGlobally(_CombineDataFrames())    # noqa
+                | beam_core.ParDo(_ConvertDFToJSON())    # noqa
+                | beam_core.ParDo(_UploadDataToDestination(ingest_time, datasets, 'json'))   # noqa
             )
-    
+
+    # pylint: disable=too-many-arguments
     def transform_convert_csv_to_parquet(self,
                                          ingest_time: datetime = datetime.utcnow(),
                                          separator: str = ',',
@@ -236,15 +244,15 @@ class PipelineConversion:
         datasets = _DataSets(self.storage_account_url, self.filesystem_name,
                              self.source_dataset_guid, self.destination_dataset_guid,
                              client_auth.get_credential_sync(), self.time_resolution)
-        
+
         with beam.Pipeline(options=PipelineOptions()) as pipeline:
             _ = (
-                pipeline 
-                | 'Read from FS' >> beam.io.Read(datalake_connector)
-                | 'Decode to str' >> beam.Map(lambda x: x.decode())
-                | beam.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,
-                                          quoting=quoting, skipinitialspace=skipinitialspace))
-                | beam.CombineGlobally(_CombineDataFrames())
-                | beam.ParDo(_ConvertDFToParquet())
-                | beam.ParDo(_UploadDataToDestination(ingest_time, datasets, 'snappy.parquet'))
+                pipeline
+                | 'Read from FS' >> beam.io.Read(datalake_connector)    # noqa
+                | 'Decode to str' >> beam_core.Map(lambda x: x.decode())     # noqa
+                | beam_core.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,     # noqa
+                                               quoting=quoting, skipinitialspace=skipinitialspace))
+                | beam_core.CombineGlobally(_CombineDataFrames())    # noqa
+                | beam_core.ParDo(_ConvertDFToParquet())     # noqa
+                | beam_core.ParDo(_UploadDataToDestination(ingest_time, datasets, 'snappy.parquet'))     # noqa
             )
