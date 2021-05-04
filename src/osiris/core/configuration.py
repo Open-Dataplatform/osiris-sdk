@@ -1,8 +1,9 @@
 """
 Contains Osiris common configuration functions
 """
-import configparser
-import logging
+from configparser import ConfigParser
+
+import logging.config
 from logging import Logger
 
 
@@ -12,14 +13,14 @@ class Configuration:
     """
 
     def __init__(self, name: str):
-        self.config = configparser.ConfigParser()
+        self.config = ConfigParser()
         self.config.read(['conf.ini', '/etc/osiris/conf.ini'])
 
         logging.config.fileConfig(fname=self.config['Logging']['configuration_file'], disable_existing_loggers=False)
 
         self.name = name
 
-    def get_config(self) -> configparser.ConfigParser:
+    def get_config(self) -> ConfigParser:
         """
         The configuration for the application.
         """
