@@ -3,7 +3,7 @@ Osiris-egress API.
 """
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 import requests
 
@@ -37,19 +37,29 @@ class Egress:
 
         self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
-    def download_json_file(self, from_date: datetime, to_date: datetime = None, time_resolution: str = 'DAY') -> Any:
+    def download_json_file(self, from_date: Optional[str] = None, to_date: Optional[str] = None) -> Any:
         """
          Download JSON file from data storage from the given date (UTC). This endpoint expects data to be
          stored in {guid}/year={date.year:02d}/month={date.month:02d}/day={date.day:02d}/data.json'.
         """
-        if to_date:
-            params = {'from_date': str(from_date), 'to_date': str(to_date), 'time_resolution': time_resolution}
-        else:
-            params = {'from_date': str(from_date), 'time_resolution': time_resolution}
+        if to_date and from_date:
+            response = requests.get(
+                url=f'{self.egress_url}/{self.dataset_guid}/json',
+                params={'from_date': from_date, 'to_date': to_date},
+                headers={'Authorization': self.client_auth.get_access_token()}
+            )
+            return handle_download_response(response)
+
+        if from_date:
+            response = requests.get(
+                url=f'{self.egress_url}/{self.dataset_guid}/json',
+                params={'from_date': from_date},
+                headers={'Authorization': self.client_auth.get_access_token()}
+            )
+            return handle_download_response(response)
 
         response = requests.get(
             url=f'{self.egress_url}/{self.dataset_guid}/json',
-            params=params,
             headers={'Authorization': self.client_auth.get_access_token()}
         )
         return handle_download_response(response)
