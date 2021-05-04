@@ -10,12 +10,12 @@ class Configuration:
     """
     Contains methods to obtain configurations for this application.
     """
-
     def __init__(self, name: str):
         self.config = configparser.ConfigParser()
         self.config.read(['conf.ini', '/etc/osiris/conf.ini'])
 
-        logging.config.fileConfig(fname=self.config['Logging']['configuration_file'], disable_existing_loggers=False)
+        logging.config.fileConfig(fname=self.config['Logging']['configuration_file'],   # type: ignore
+                                  disable_existing_loggers=False)
 
         self.name = name
 
