@@ -31,3 +31,21 @@ class Configuration:
         A customized logger.
         """
         return logging.getLogger(self.name)
+
+
+class ConfigurationWithCredentials(Configuration):
+    """
+    Contains methods to obtain configurations for this application.
+    """
+
+    def __init__(self, name: str):
+        super().__init__(name)
+
+        self.credentials_config = ConfigParser()
+        self.credentials_config.read(['credentials.ini', '/vault/secrets/credentials.ini'])
+
+    def get_credentials_config(self) -> ConfigParser:
+        """
+        The credential config for the application.
+        """
+        return self.credentials_config
