@@ -47,8 +47,15 @@ class IngressAdapter:
         return b''
 
     @staticmethod
-    def __get_filename() -> str:
-        return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    @abc.abstractmethod
+    def get_filename() -> str:
+        """
+        Subclasses must implement this method to provide the filename to be used when ingesting the to the DataPlatform
+        using this Osiris-ingress API. The data must be converted to a bytes string.
+        """
+
+        # this is one example of a filename
+        return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') + '.json'
 
     def upload_json_data(self, schema_validate: bool):
         """
@@ -58,7 +65,7 @@ class IngressAdapter:
         logger.debug('upload_json_data called')
         data = self.retrieve_data()
         file = BytesIO(data)
-        file.name = self.__get_filename() + '.json'
+        file.name = self.get_filename()
 
         try:
             self.ingress.upload_json_file(file, schema_validate)
@@ -66,14 +73,14 @@ class IngressAdapter:
             logger.error('Exception occurred while running upload_json_data: %s', str(error))
             sys.exit(-1)
 
-    def upload_data(self, file_extension: str):
+    def upload_data(self):
         """
         Makes a single run of the framework and ingest the data from the 'retrieve_data' method to the Platform
         with the given file extension.
         """
         data = self.retrieve_data()
         file = BytesIO(data)
-        file.name = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') + '.' + file_extension
+        file.name = self.get_filename()
 
         try:
             self.ingress.upload_file(file)
