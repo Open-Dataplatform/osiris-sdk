@@ -1,5 +1,6 @@
 """
 Osiris-Ingress Adapter Framework.
+
 """
 import abc
 import logging
