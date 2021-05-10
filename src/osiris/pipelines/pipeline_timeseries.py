@@ -81,7 +81,7 @@ class _JoinUniqueEventData(beam_core.DoFn, ABC):
 
             return [(date, joined_events)]
         except ResourceNotFoundError:
-            return [element]
+            return [(date, events)]
 
 
 class _UploadEventsToDestination(beam_core.DoFn, ABC):
