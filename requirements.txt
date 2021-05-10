@@ -1,6 +1,6 @@
 msal
 requests
 azure-identity
-apache-beam==2.28.0
+apache-beam
 azure-storage-file-datalake
 pandas

@@ -11,7 +11,7 @@ def get_directory_path_with_respect_to_time_resolution(date: datetime, time_reso
     Returns the directory path which corresponds to the given time resolution. The GUID directory is not included!
     """
     if time_resolution == TimeResolution.NONE:
-        return f''
+        return ''
     if time_resolution == TimeResolution.YEAR:
         return f'year={date.year}/'
     if time_resolution == TimeResolution.MONTH:
