@@ -133,5 +133,9 @@ dmypy.json
 .vscode/
 .vscode/
 
+# conf files
+conf.ini
+credentials.ini
+
 # Sample program
 samples/
