@@ -15,10 +15,13 @@ logger = logging.getLogger(__name__)
 
 def handle_download_response(response: Response) -> Any:
     """
-     Checks status codes and converts JSON string to Python objects.
+     Checks status codes and converts JSON string to Python objects. Returns empty list if no result was found.
     """
 
     check_status_code(response)
+
+    if response.status_code == HTTPStatus.NO_CONTENT:
+        return []
 
     try:
         return json.loads(response.content)

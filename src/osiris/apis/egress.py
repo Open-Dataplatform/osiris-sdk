@@ -2,18 +2,17 @@
 Osiris-egress API.
 """
 import logging
-from datetime import datetime
 from typing import Any, Optional
 
 import requests
 
-from .dependencies import check_status_code, handle_download_response
+from .dependencies import handle_download_response
 from ..core.azure_client_authorization import ClientAuthorization
 
 
 logger = logging.getLogger(__name__)
 
-
+# pylint: disable=too-few-public-methods
 class Egress:
     """
     Contains functions for downloading data from the Osiris-egress API.
@@ -64,19 +63,19 @@ class Egress:
         )
         return handle_download_response(response)
 
-    def download_file(self, file_date: datetime) -> bytes:
-        """
-           Download file from data storage from the given date (UTC). This endpoint expects data to be
-           stored in the folder {guid}/year={date.year:02d}/month={date.month:02d}/day={date.day:02d}/, but doesnt make
-           any assumption about the filename and file extension.
-        """
-
-        response = requests.get(
-            url=f'{self.egress_url}/{self.dataset_guid}',
-            params={'file_date': str(file_date)},
-            headers={'Authorization': self.client_auth.get_access_token()}
-        )
-
-        check_status_code(response)
-
-        return response.content
+    # def download_file(self, file_date: datetime) -> bytes:
+    #     """
+    #        Download file from data storage from the given date (UTC). This endpoint expects data to be
+    #        stored in the folder {guid}/year={date.year:02d}/month={date.month:02d}/day={date.day:02d}/, but doesnt
+    #        make any assumption about the filename and file extension.
+    #     """
+    #
+    #     response = requests.get(
+    #         url=f'{self.egress_url}/{self.dataset_guid}',
+    #         params={'file_date': str(file_date)},
+    #         headers={'Authorization': self.client_auth.get_access_token()}
+    #     )
+    #
+    #     check_status_code(response)
+    #
+    #     return response.content
