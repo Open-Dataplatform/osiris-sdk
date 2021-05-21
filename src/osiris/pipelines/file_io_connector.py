@@ -11,7 +11,7 @@ from azure.storage.filedatalake import DataLakeServiceClient, DataLakeFileClient
 from ..core.azure_client_authorization import AzureCredential
 
 
-class _DatalakeFileSource(iobase.BoundedSource):  # noqa
+class DatalakeFileSource(iobase.BoundedSource):  # noqa
     """
     A Class to download files from Azure Datalake
     """

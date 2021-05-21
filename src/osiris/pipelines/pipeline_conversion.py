@@ -12,8 +12,8 @@ import apache_beam.transforms.core as beam_core
 from apache_beam.options.pipeline_options import PipelineOptions
 
 from .pipeline import OsirisPipeline
-from .azure_data_storage import _DataSets
-from .file_io_connector import _DatalakeFileSource
+from .azure_data_storage import DataSets
+from .file_io_connector import DatalakeFileSource
 
 
 class _LoadCSVToDF(beam_core.DoFn, ABC):
@@ -129,7 +129,7 @@ class _UploadDataToDestination(beam_core.DoFn, ABC):
     # pylint: disable=too-many-arguments
     def __init__(self,
                  date: datetime,
-                 datasets: _DataSets,
+                 datasets: DataSets,
                  filename: str = 'data',
                  file_prefix: str = '',
                  file_suffix: str = ''):
@@ -166,9 +166,9 @@ class PipelineConversion(OsirisPipeline):
         :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
         :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
         """
-        datalake_connector = _DatalakeFileSource(ingest_time, self.client_auth.get_credential_sync(),
-                                                 self.storage_account_url, self.filesystem_name,
-                                                 self.source_dataset_guid)
+        datalake_connector = DatalakeFileSource(ingest_time, self.client_auth.get_credential_sync(),
+                                                self.storage_account_url, self.filesystem_name,
+                                                self.source_dataset_guid)
 
         with beam.Pipeline(options=PipelineOptions()) as pipeline:
             _ = (
@@ -198,9 +198,9 @@ class PipelineConversion(OsirisPipeline):
         :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
         :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
         """
-        datalake_connector = _DatalakeFileSource(ingest_time, self.client_auth.get_credential_sync(),
-                                                 self.storage_account_url, self.filesystem_name,
-                                                 self.source_dataset_guid)
+        datalake_connector = DatalakeFileSource(ingest_time, self.client_auth.get_credential_sync(),
+                                                self.storage_account_url, self.filesystem_name,
+                                                self.source_dataset_guid)
 
         with beam.Pipeline(options=PipelineOptions()) as pipeline:
             _ = (

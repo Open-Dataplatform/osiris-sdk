@@ -3,7 +3,7 @@ Module for common pipeline classes and functions
 """
 from ..core.enums import TimeResolution
 from ..core.azure_client_authorization import ClientAuthorization
-from .azure_data_storage import _DataSets
+from .azure_data_storage import DataSets
 
 
 # pylint: disable=too-few-public-methods
@@ -44,6 +44,6 @@ class OsirisPipeline:
 
         self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
-        self.datasets = _DataSets(storage_account_url, filesystem_name,
-                                  source_dataset_guid, destination_dataset_guid,
-                                  self.client_auth.get_credential_sync(), time_resolution)
+        self.datasets = DataSets(storage_account_url, filesystem_name,
+                                 source_dataset_guid, destination_dataset_guid,
+                                 self.client_auth.get_credential_sync(), time_resolution)

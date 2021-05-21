@@ -16,7 +16,7 @@ from ..core.io import get_file_path_with_respect_to_time_resolution
 logger = logging.getLogger(__name__)
 
 
-class _DataSets:
+class DataSets:
     """
     Class to handle datasets IO
     """
