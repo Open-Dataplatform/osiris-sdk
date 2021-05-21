@@ -43,8 +43,8 @@ class _DataSets:
         Read events from destination corresponding a given date
         """
 
-        file_path = f'{self.destination}/ \
-                    {get_file_path_with_respect_to_time_resolution(date, self.time_resolution, "data.json")}'
+        sub_file_path = get_file_path_with_respect_to_time_resolution(date, self.time_resolution, "data.json")
+        file_path = f'{self.destination}/{sub_file_path}'
 
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name, file_path,
@@ -76,8 +76,8 @@ class _DataSets:
         """
         Uploads arbitrary `AnyStr` data to destination based on the given date
         """
-        file_path = f'{self.destination}/ \
-                    {get_file_path_with_respect_to_time_resolution(date, self.time_resolution, filename)}'
+        sub_file_path = get_file_path_with_respect_to_time_resolution(date, self.time_resolution, filename)
+        file_path = f'{self.destination}/{sub_file_path}'
 
         with DataLakeFileClientSync(self.account_url,
                                     self.filesystem_name,
