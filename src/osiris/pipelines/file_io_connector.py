@@ -1,6 +1,7 @@
 """
 A source to download files from Azure Datalake
 """
+import os
 from datetime import timedelta, datetime
 from typing import List, Optional, Generator
 
@@ -105,3 +106,27 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
                 start_position=bundle_start,
                 stop_position=bundle_stop)
             bundle_start = bundle_stop
+
+
+class DatalakeFileSourceWithFileName(DatalakeFileSource):  # noqa
+    """
+    A Class to download files from Azure Datalake with file name.
+    """
+    def read(self, range_tracker: OffsetRangeTracker) -> Optional[Generator]:
+        """
+        Returns the content of the next file.
+        """
+        for i in range(range_tracker.start_position(),
+                       range_tracker.stop_position()):
+            if not range_tracker.try_claim(i):
+                return
+
+            path = self.file_paths[i].name
+            with DataLakeFileClient(self.account_url,
+                                    self.filesystem_name, path,
+                                    credential=self.credential) as file_client:
+                content = file_client.download_file().readall()
+
+                file_name = os.path.basename(path)
+
+                yield file_name, content
