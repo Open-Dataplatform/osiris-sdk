@@ -49,6 +49,7 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
         self.account_url = account_url
         self.filesystem_name = filesystem_name
         self.guid = guid
+        self.has_ingest_time = ingest_time is not None
 
         self.file_paths = self.__get_file_paths(ingest_time, max_files)
 
@@ -194,7 +195,7 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
 
         # If ingest time its set, we will not update or use the state. Close() should not be called in this
         # situation.
-        if self.ingest_time:
+        if self.has_ingest_time:
             return
 
         with FileSystemClient(self.account_url, self.filesystem_name,

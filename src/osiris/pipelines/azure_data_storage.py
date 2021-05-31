@@ -27,7 +27,7 @@ class DataSets:
                  source: str,
                  destination: str,
                  credential: AzureCredential,
-                 time_resolution: TimeResolution):
+                 time_resolution: TimeResolution,):
 
         self.account_url = account_url
         self.filesystem_name = filesystem_name
