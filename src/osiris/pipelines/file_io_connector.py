@@ -2,10 +2,10 @@
 A source to download files from Azure Datalake
 """
 import os
-import pandas as pd
 import json
 from datetime import timedelta, datetime
 from typing import List, Optional, Generator, Dict
+import pandas as pd
 
 from apache_beam.io import OffsetRangeTracker, iobase
 from azure.core.exceptions import ResourceNotFoundError
@@ -17,6 +17,18 @@ from ..core.azure_client_authorization import AzureCredential
 class DatalakeFileSource(iobase.BoundedSource):  # noqa
     """
     A Class to download files from Azure Datalake
+
+    This datasource can be used in two different ways:
+
+    1. You can initialize it with an ingest time. In this case it will process files from the current hour and the
+    previous hour no matter if they have been processed before or not. It will also ignore the max_files argument.
+
+    2. If you don't initialize it with an ingest time, it will use a state which it will store in a file (STATE_FILE)
+    on the dataset. This state will contain the last modified timestamp of the last file it processed. Next time
+    it runs it will only process files newer than this timestamp and according to the max_files argument.
+        - If you use this approach you need to call close() after the pipeline to save the state otherwise it will
+        keep processing the same files again and again.
+        - First time it runs it will use the current UTC time.
     """
 
     STATE_FILE = 'transformation_state.json'
@@ -37,25 +49,23 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
         self.account_url = account_url
         self.filesystem_name = filesystem_name
         self.guid = guid
-        self.ingest_time = ingest_time
-        self.max_files = max_files
 
-        self.file_paths = self.__get_file_paths()
+        self.file_paths = self.__get_file_paths(ingest_time, max_files)
 
-    def __get_file_paths(self) -> List[PathProperties]:
+    def __get_file_paths(self, ingest_time: Optional[datetime], max_files: int) -> List[PathProperties]:
         with FileSystemClient(self.account_url, self.filesystem_name,
                               credential=self.credential) as filesystem_client:
 
-            if self.ingest_time is None:
-                return self.__get_paths_since_last_run(filesystem_client)
+            if ingest_time is None:
+                return self.__get_paths_since_last_run(filesystem_client, max_files)
 
-            return self.__get_paths_on_basis_of_ingest_time(filesystem_client)
+            return self.__get_paths_on_basis_of_ingest_time(filesystem_client, ingest_time)
 
-    def __get_paths_on_basis_of_ingest_time(self, filesystem_client) -> List[PathProperties]:
-        folder_path1 = f'{self.guid}/year={self.ingest_time.year}/month={self.ingest_time.month:02d}/' + \
-                       f'day={self.ingest_time.day:02d}/hour={self.ingest_time.hour:02d}'
+    def __get_paths_on_basis_of_ingest_time(self, filesystem_client, ingest_time: datetime) -> List[PathProperties]:
+        folder_path1 = f'{self.guid}/year={ingest_time.year}/month={ingest_time.month:02d}/' + \
+                       f'day={ingest_time.day:02d}/hour={ingest_time.hour:02d}'
 
-        prev_hour = self.ingest_time - timedelta(hours=1)
+        prev_hour = ingest_time - timedelta(hours=1)
         folder_path2 = f'{self.guid}/year={prev_hour.year}/month={prev_hour.month:02d}/day={prev_hour.day:02d}' + \
                        f'/hour={prev_hour.hour:02d}'
 
@@ -63,9 +73,9 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
         paths += self.__get_file_paths_from_folder(folder_path1, filesystem_client)
         paths += self.__get_file_paths_from_folder(folder_path2, filesystem_client)
 
-        return paths[:self.max_files]
+        return paths
 
-    def __get_paths_since_last_run(self, filesystem_client: FileSystemClient) -> List[PathProperties]:
+    def __get_paths_since_last_run(self, filesystem_client: FileSystemClient, max_files: int) -> List[PathProperties]:
         state = self.__retrieve_transformation_state(filesystem_client)
 
         if not state:
@@ -74,28 +84,29 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
 
             paths = self.__get_file_paths_from_folder(folder_path, filesystem_client)
 
-            return paths[:self.max_files]
+            return paths[:max_files]
 
-        else:
-            last_successful_run = datetime.strptime(state['last_successful_run'], '%Y-%m-%dT%H:%M:%S')
-            now = datetime.utcnow()
-            time_range = pd.date_range(last_successful_run, now, freq='H')
+        # There is a state file:
 
-            paths = []
-            for timeslot in time_range:
-                folder_path = f'{self.guid}/year={timeslot.year}/month={timeslot.month:02d}/day={timeslot.day:02d}' + \
-                              f'/hour={timeslot.hour:02d}'
+        last_successful_run = datetime.strptime(state['last_successful_run'], '%Y-%m-%dT%H:%M:%S')
+        now = datetime.utcnow()
+        time_range = pd.date_range(last_successful_run, now, freq='H')
 
-                temp_paths = self.__get_file_paths_from_folder(folder_path, filesystem_client)
+        paths = []
+        for timeslot in time_range:
+            folder_path = f'{self.guid}/year={timeslot.year}/month={timeslot.month:02d}/day={timeslot.day:02d}' + \
+                          f'/hour={timeslot.hour:02d}'
 
-                for path in temp_paths:
-                    if path.last_modified > last_successful_run:
-                        paths.append(path)
+            temp_paths = self.__get_file_paths_from_folder(folder_path, filesystem_client)
 
-                if len(paths) > self.max_files:
-                    break
+            for path in temp_paths:
+                if path.last_modified > last_successful_run:
+                    paths.append(path)
 
-        return paths[:self.max_files]
+            if len(paths) > max_files:
+                break
+
+        return paths[:max_files]
 
     def __retrieve_transformation_state(self, filesystem_client: FileSystemClient) -> Optional[Dict]:
         with filesystem_client.get_file_client(f'{self.guid}/{self.STATE_FILE}') as file_client:
@@ -113,7 +124,9 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
     @staticmethod
     def __get_file_paths_from_folder(folder_path: str, file_system_client: FileSystemClient) -> List[PathProperties]:
         try:
-            return list(file_system_client.get_paths(path=folder_path))
+            paths = list(file_system_client.get_paths(path=folder_path))
+            paths.sort(key=lambda x: x.last_modified)
+            return paths
         except ResourceNotFoundError:
             return []
 
@@ -193,18 +206,9 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
                 state = {}
 
             if len(self.file_paths):
-                latest_modified = self.__get_latest_modified(self.file_paths)
+                latest_modified = self.file_paths[-1].last_modified  # file_paths is sorted ascending.
                 state['last_successful_run'] = latest_modified.isoformat()
                 self.__save_transformation_state(filesystem_client, state)
-
-    @staticmethod
-    def __get_latest_modified(file_paths):
-        latest = file_paths[0]
-        for file_path in file_paths[1:]:
-            if file_path.last_modified > latest:
-                latest = file_path.last_modified
-
-        return latest
 
 
 class DatalakeFileSourceWithFileName(DatalakeFileSource):  # noqa

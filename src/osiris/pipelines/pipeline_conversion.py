@@ -166,9 +166,9 @@ class PipelineConversion(OsirisPipeline):
         :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
         :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
         """
-        datalake_connector = DatalakeFileSource(ingest_time, self.client_auth.get_credential_sync(),
+        datalake_connector = DatalakeFileSource(self.client_auth.get_credential_sync(),
                                                 self.storage_account_url, self.filesystem_name,
-                                                self.source_dataset_guid)
+                                                self.source_dataset_guid, ingest_time)
 
         with beam.Pipeline(options=PipelineOptions()) as pipeline:
             _ = (
@@ -198,9 +198,9 @@ class PipelineConversion(OsirisPipeline):
         :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
         :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
         """
-        datalake_connector = DatalakeFileSource(ingest_time, self.client_auth.get_credential_sync(),
+        datalake_connector = DatalakeFileSource(self.client_auth.get_credential_sync(),
                                                 self.storage_account_url, self.filesystem_name,
-                                                self.source_dataset_guid)
+                                                self.source_dataset_guid, ingest_time)
 
         with beam.Pipeline(options=PipelineOptions()) as pipeline:
             _ = (
