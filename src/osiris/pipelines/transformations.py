@@ -31,23 +31,24 @@ class ConvertEventToTuple(beam_core.DoFn, ABC):
         res = []
         for event in element:
             datetime_obj = pd.to_datetime(event[self.date_key_name], format=self.date_format)
-            res.append((str(self.__convert_datetime_to_time_resolution(datetime_obj)), event))
+            res.append((self.__convert_datetime_to_time_resolution(datetime_obj), event))
 
         return res
 
     def __convert_datetime_to_time_resolution(self, datetime_obj: datetime):
         if self.time_resolution == TimeResolution.NONE:
-            return datetime_obj.replace(year=1970, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            return '1970-01-01T00:00:00'
         if self.time_resolution == TimeResolution.YEAR:
-            return datetime_obj.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            return f'{datetime_obj.year}-01-01T00:00:00'
         if self.time_resolution == TimeResolution.MONTH:
-            return datetime_obj.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            return f'{datetime_obj.year}-{datetime_obj.month:02d}-01T00:00:00'
         if self.time_resolution == TimeResolution.DAY:
-            return datetime_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+            return f'{datetime_obj.year}-{datetime_obj.month:02d}-{datetime_obj.day:02d}T00:00:00'
         if self.time_resolution == TimeResolution.HOUR:
-            return datetime_obj.replace(minute=0, second=0, microsecond=0)
+            return f'{datetime_obj.year}-{datetime_obj.month:02d}-{datetime_obj.day:02d}T{datetime_obj.hour:02d}:00:00'
         if self.time_resolution == TimeResolution.MINUTE:
-            return datetime_obj.replace(second=0, microsecond=0)
+            return f'{datetime_obj.year}-{datetime_obj.month:02d}-{datetime_obj.day:02d}T{datetime_obj.hour:02d}:' + \
+                   f'{datetime_obj.minute:02d}:00'
         message = 'Unknown enum type'
         raise ValueError(message)
 
