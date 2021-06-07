@@ -11,9 +11,11 @@ from apache_beam.io import OffsetRangeTracker, iobase
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.filedatalake import DataLakeFileClient, FileSystemClient, PathProperties
 
-from ..core.azure_client_authorization import AzureCredential
+from .common import initialize_client_auth
+from ..core.azure_client_authorization import ClientAuthorization
 
 
+# pylint: disable=too-many-instance-attributes
 class DatalakeFileSource(iobase.BoundedSource):  # noqa
     """
     A Class to download files from Azure Datalake
@@ -35,27 +37,37 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
 
     # pylint: disable=too-many-arguments
     def __init__(self,
-                 credential: AzureCredential,
+                 tenant_id: str,
+                 client_id: str,
+                 client_secret: str,
                  account_url: str,
                  filesystem_name: str,
                  guid: str,
                  ingest_time: datetime = None,
                  max_files: int = 10):
 
-        if None in [credential, account_url, filesystem_name, guid]:
+        if None in [tenant_id, client_id, client_secret, account_url, filesystem_name, guid]:
             raise TypeError
 
-        self.credential = credential
+        self.tenant_id = tenant_id
+        self.client_id = client_id
+        self.client_secret = client_secret
         self.account_url = account_url
         self.filesystem_name = filesystem_name
         self.guid = guid
         self.has_ingest_time = ingest_time is not None
 
-        self.file_paths = self.__get_file_paths(ingest_time, max_files)
+        # We need to initialize the ClientAuthorization using lazy initializing because of Beam. Beam pickles
+        # this object and pickles only allow simples values as instance variables and not objects.
+        self.client_auth = None
 
-    def __get_file_paths(self, ingest_time: Optional[datetime], max_files: int) -> List[PathProperties]:
+        local_client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
+        self.file_paths = self.__get_file_paths(ingest_time, max_files, local_client_auth)
+
+    def __get_file_paths(self, ingest_time: Optional[datetime], max_files: int,
+                         local_client_auth: ClientAuthorization) -> List[PathProperties]:
         with FileSystemClient(self.account_url, self.filesystem_name,
-                              credential=self.credential) as filesystem_client:
+                              credential=local_client_auth.get_credential_sync()) as filesystem_client:
 
             if ingest_time is None:
                 return self.__get_paths_since_last_run(filesystem_client, max_files)
@@ -148,6 +160,7 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
 
         return OffsetRangeTracker(start_position, stop_position)
 
+    @initialize_client_auth
     def read(self, range_tracker: OffsetRangeTracker) -> Optional[Generator]:
         """
         Returns the content of the next file
@@ -159,7 +172,7 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
             path = self.file_paths[i].name
             with DataLakeFileClient(self.account_url,
                                     self.filesystem_name, path,
-                                    credential=self.credential) as file_client:
+                                    credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
 
                 content = file_client.download_file().readall()
 
@@ -198,8 +211,10 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
         if self.has_ingest_time:
             return
 
+        local_client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
+
         with FileSystemClient(self.account_url, self.filesystem_name,
-                              credential=self.credential) as filesystem_client:
+                              credential=local_client_auth.get_credential_sync()) as filesystem_client:
             state = self.__retrieve_transformation_state(filesystem_client)
 
             # state file doesn't exist. We create a fresh one.
@@ -212,10 +227,14 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
                 self.__save_transformation_state(filesystem_client, state)
 
 
+
+
 class DatalakeFileSourceWithFileName(DatalakeFileSource):  # noqa
     """
     A Class to download files from Azure Datalake with file name.
     """
+
+    @initialize_client_auth
     def read(self, range_tracker: OffsetRangeTracker) -> Optional[Generator]:
         """
         Returns the content of the next file.
@@ -227,7 +246,7 @@ class DatalakeFileSourceWithFileName(DatalakeFileSource):  # noqa
             path = self.file_paths[i].name
             with DataLakeFileClient(self.account_url,
                                     self.filesystem_name, path,
-                                    credential=self.credential) as file_client:
+                                    credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
                 content = file_client.download_file().readall()
 
                 file_name = os.path.basename(path)

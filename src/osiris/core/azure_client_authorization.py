@@ -3,8 +3,11 @@ Contains functions to authorize a client against Azure storage
 """
 import logging
 import time
+import os
+import atexit
 
 import msal
+
 from azure.core.credentials import AccessToken
 
 
@@ -66,10 +69,20 @@ class ClientAuthorization:
         if None in [tenant_id, client_id, client_secret]:
             raise TypeError
 
+        cache = msal.SerializableTokenCache()
+        if os.path.exists("my_cache.bin"):
+            cache.deserialize(open("my_cache.bin", "r").read())
+        atexit.register(lambda:
+                        open("my_cache.bin", "w").write(cache.serialize())
+                        # Hint: The following optional line persists only when state changed
+                        if cache.has_state_changed else None
+                        )
+
         self.confidential_client_app = msal.ConfidentialClientApplication(
             authority=f'https://login.microsoftonline.com/{tenant_id}',
             client_id=client_id,
-            client_credential=client_secret
+            client_credential=client_secret,
+            token_cache=cache
         )
 
         self.scopes = ['https://storage.azure.com/.default']

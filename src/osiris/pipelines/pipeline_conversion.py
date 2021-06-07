@@ -7,13 +7,9 @@ from datetime import datetime
 from io import StringIO, BytesIO
 
 import pandas as pd
-import apache_beam as beam
 import apache_beam.transforms.core as beam_core
-from apache_beam.options.pipeline_options import PipelineOptions
 
-from .pipeline import OsirisPipeline
 from .azure_data_storage import DataSets
-from .file_io_connector import DatalakeFileSource
 
 
 class _LoadCSVToDF(beam_core.DoFn, ABC):
@@ -144,72 +140,72 @@ class _UploadDataToDestination(beam_core.DoFn, ABC):
         _filename = f'{self.file_prefix}{self.filename}{self.file_suffix}'
         self.datasets.upload_data_to_destination(self.date, element, _filename)
 
-
-class PipelineConversion(OsirisPipeline):
-    """
-    Class to create pipelines for generic data conversion.
-    """
-
-    # pylint: disable=too-many-arguments
-    def transform_convert_csv_to_json(self,
-                                      ingest_time: datetime = datetime.utcnow(),
-                                      separator: str = ',',
-                                      quotechar: str = '"',
-                                      quoting: int = csv.QUOTE_NONNUMERIC,
-                                      skipinitialspace: bool = True):
-        """
-        Creates a pipeline to convert CSV data into JSON format.
-        Writes the destination file to the same folder structure as the source file.
-        :param ingest_time: the ingest time to parse - defaults to current time
-        :param separator: the separator char to pass to `pandas.read_csv`
-        :param quotechar: the quote char to pass to `pandas.read_csv`
-        :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
-        :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
-        """
-        datalake_connector = DatalakeFileSource(self.client_auth.get_credential_sync(),
-                                                self.storage_account_url, self.filesystem_name,
-                                                self.source_dataset_guid, ingest_time)
-
-        with beam.Pipeline(options=PipelineOptions()) as pipeline:
-            _ = (
-                pipeline  # noqa
-                | 'Read from FS' >> beam.io.Read(datalake_connector)  # noqa
-                | 'Decode to str' >> beam_core.Map(lambda x: x.decode())  # noqa
-                | beam_core.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,  # noqa
-                                               quoting=quoting, skipinitialspace=skipinitialspace))
-                | beam_core.CombineGlobally(_CombineDataFrames())  # noqa
-                | beam_core.ParDo(_ConvertDFToJSON())  # noqa
-                | beam_core.ParDo(_UploadDataToDestination(ingest_time, self.datasets, 'json'))  # noqa
-            )
-
-    # pylint: disable=too-many-arguments
-    def transform_convert_csv_to_parquet(self,
-                                         ingest_time: datetime = datetime.utcnow(),
-                                         separator: str = ',',
-                                         quotechar: str = '"',
-                                         quoting: int = csv.QUOTE_NONNUMERIC,
-                                         skipinitialspace: bool = True):
-        """
-        Creates a pipeline to convert CSV data into JSON format.
-        Writes the destination file to the same folder structure as the source file.
-        :param ingest_time: the ingest time to parse - defaults to current time
-        :param separator: the separator char to pass to `pandas.read_csv`
-        :param quotechar: the quote char to pass to `pandas.read_csv`
-        :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
-        :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
-        """
-        datalake_connector = DatalakeFileSource(self.client_auth.get_credential_sync(),
-                                                self.storage_account_url, self.filesystem_name,
-                                                self.source_dataset_guid, ingest_time)
-
-        with beam.Pipeline(options=PipelineOptions()) as pipeline:
-            _ = (
-                pipeline  # noqa
-                | 'Read from FS' >> beam.io.Read(datalake_connector)  # noqa
-                | 'Decode to str' >> beam_core.Map(lambda x: x.decode())  # noqa
-                | beam_core.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,  # noqa
-                                               quoting=quoting, skipinitialspace=skipinitialspace))
-                | beam_core.CombineGlobally(_CombineDataFrames())  # noqa
-                | beam_core.ParDo(_ConvertDFToParquet())  # noqa
-                | beam_core.ParDo(_UploadDataToDestination(ingest_time, self.datasets, 'snappy.parquet'))  # noqa
-            )
+# Araz: I commented this code out. This code shouldn't be in here.
+# class PipelineConversion(OsirisPipeline):
+#     """
+#     Class to create pipelines for generic data conversion.
+#     """
+#
+#     # pylint: disable=too-many-arguments
+#     def transform_convert_csv_to_json(self,
+#                                       ingest_time: datetime = datetime.utcnow(),
+#                                       separator: str = ',',
+#                                       quotechar: str = '"',
+#                                       quoting: int = csv.QUOTE_NONNUMERIC,
+#                                       skipinitialspace: bool = True):
+#         """
+#         Creates a pipeline to convert CSV data into JSON format.
+#         Writes the destination file to the same folder structure as the source file.
+#         :param ingest_time: the ingest time to parse - defaults to current time
+#         :param separator: the separator char to pass to `pandas.read_csv`
+#         :param quotechar: the quote char to pass to `pandas.read_csv`
+#         :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
+#         :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
+#         """
+#         datalake_connector = DatalakeFileSource(self.tenant.,
+#                                                 self.storage_account_url, self.filesystem_name,
+#                                                 self.source_dataset_guid, ingest_time)
+#
+#         with beam.Pipeline(options=PipelineOptions()) as pipeline:
+#             _ = (
+#                 pipeline  # noqa
+#                 | 'Read from FS' >> beam.io.Read(datalake_connector)  # noqa
+#                 | 'Decode to str' >> beam_core.Map(lambda x: x.decode())  # noqa
+#                 | beam_core.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,  # noqa
+#                                                quoting=quoting, skipinitialspace=skipinitialspace))
+#                 | beam_core.CombineGlobally(_CombineDataFrames())  # noqa
+#                 | beam_core.ParDo(_ConvertDFToJSON())  # noqa
+#                 | beam_core.ParDo(_UploadDataToDestination(ingest_time, self.datasets, 'json'))  # noqa
+#             )
+#
+#     # pylint: disable=too-many-arguments
+#     def transform_convert_csv_to_parquet(self,
+#                                          ingest_time: datetime = datetime.utcnow(),
+#                                          separator: str = ',',
+#                                          quotechar: str = '"',
+#                                          quoting: int = csv.QUOTE_NONNUMERIC,
+#                                          skipinitialspace: bool = True):
+#         """
+#         Creates a pipeline to convert CSV data into JSON format.
+#         Writes the destination file to the same folder structure as the source file.
+#         :param ingest_time: the ingest time to parse - defaults to current time
+#         :param separator: the separator char to pass to `pandas.read_csv`
+#         :param quotechar: the quote char to pass to `pandas.read_csv`
+#         :param quoting: the quoting enum (from `csv`) to pass to `pandas.read_csv`
+#         :param skipinitialspace: whether initial spaces in columns should be stripped, passed to `pandas.read_csv`
+#         """
+#         datalake_connector = DatalakeFileSource(self.client_auth.get_credential_sync(),
+#                                                 self.storage_account_url, self.filesystem_name,
+#                                                 self.source_dataset_guid, ingest_time)
+#
+#         with beam.Pipeline(options=PipelineOptions()) as pipeline:
+#             _ = (
+#                 pipeline  # noqa
+#                 | 'Read from FS' >> beam.io.Read(datalake_connector)  # noqa
+#                 | 'Decode to str' >> beam_core.Map(lambda x: x.decode())  # noqa
+#                 | beam_core.ParDo(_LoadCSVToDF(separator=separator, quotechar=quotechar,  # noqa
+#                                                quoting=quoting, skipinitialspace=skipinitialspace))
+#                 | beam_core.CombineGlobally(_CombineDataFrames())  # noqa
+#                 | beam_core.ParDo(_ConvertDFToParquet())  # noqa
+#                 | beam_core.ParDo(_UploadDataToDestination(ingest_time, self.datasets, 'snappy.parquet'))  # noqa
+#             )
