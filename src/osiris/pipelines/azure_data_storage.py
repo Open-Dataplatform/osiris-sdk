@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import List, Dict, AnyStr
 
 from azure.core.exceptions import HttpResponseError
-from azure.storage.filedatalake import DataLakeFileClient as DataLakeFileClientSync
+from azure.storage.filedatalake import DataLakeFileClient
 
 from .common import initialize_client_auth
 from ..core.enums import TimeResolution
@@ -58,9 +58,10 @@ class DataSets:
         sub_file_path = get_file_path_with_respect_to_time_resolution(date, self.time_resolution, "data.json")
         file_path = f'{self.destination}/{sub_file_path}'
 
-        with DataLakeFileClientSync(self.account_url,
-                                    self.filesystem_name, file_path,
-                                    credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
+        with DataLakeFileClient(self.account_url,
+                                self.filesystem_name,
+                                file_path,
+                                credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
 
             file_content = file_client.download_file().readall()
             return json.loads(file_content)
@@ -74,10 +75,10 @@ class DataSets:
         file_path = f'{self.destination}/{sub_file_path}'
 
         data = json.dumps(events)
-        with DataLakeFileClientSync(self.account_url,
-                                    self.filesystem_name,
-                                    file_path,
-                                    credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
+        with DataLakeFileClient(self.account_url,
+                                self.filesystem_name,
+                                file_path,
+                                credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
             try:
                 file_client.upload_data(data, overwrite=True)
             except HttpResponseError as error:
@@ -93,10 +94,10 @@ class DataSets:
         sub_file_path = get_file_path_with_respect_to_time_resolution(date, self.time_resolution, filename)
         file_path = f'{self.destination}/{sub_file_path}'
 
-        with DataLakeFileClientSync(self.account_url,
-                                    self.filesystem_name,
-                                    file_path,
-                                    credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
+        with DataLakeFileClient(self.account_url,
+                                self.filesystem_name,
+                                file_path,
+                                credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
             try:
                 file_client.upload_data(data, overwrite=True)
             except HttpResponseError as error:
