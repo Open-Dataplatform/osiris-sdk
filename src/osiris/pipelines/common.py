@@ -10,7 +10,10 @@ def initialize_client_auth(func):
     This function is used to initialize the ClientAuthorization in a lazy way because of Beam.
     """
     def wrapper(self, *args, **kwargs):
-        self.client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
+
+        if not self.client_auth:
+            self.client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
+
         return func(self, *args, **kwargs)
 
     return wrapper
