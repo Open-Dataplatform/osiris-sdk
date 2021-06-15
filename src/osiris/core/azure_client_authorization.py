@@ -3,12 +3,12 @@ Contains functions to authorize a client against Azure storage
 """
 import logging
 import time
-import os
-import atexit
 
 import msal
 
 from azure.core.credentials import AccessToken
+from azure.identity import ClientSecretCredential as ClientSecretCredentialSync
+from azure.identity.aio import ClientSecretCredential as ClientSecretCredentialASync
 
 
 logger = logging.getLogger(__name__)
@@ -69,20 +69,13 @@ class ClientAuthorization:
         if None in [tenant_id, client_id, client_secret]:
             raise TypeError
 
-        cache = msal.SerializableTokenCache()
-        if os.path.exists("my_cache.bin"):
-            cache.deserialize(open("my_cache.bin", "r").read())
-        atexit.register(lambda:
-                        open("my_cache.bin", "w").write(cache.serialize())
-                        # Hint: The following optional line persists only when state changed
-                        if cache.has_state_changed else None
-                        )
-
+        self.tenant_id = tenant_id
+        self.client_id = client_id
+        self.client_secret = client_secret
         self.confidential_client_app = msal.ConfidentialClientApplication(
             authority=f'https://login.microsoftonline.com/{tenant_id}',
             client_id=client_id,
-            client_credential=client_secret,
-            token_cache=cache
+            client_credential=client_secret
         )
 
         self.scopes = ['https://storage.azure.com/.default']
@@ -93,13 +86,13 @@ class ClientAuthorization:
         """
         Returns Azure credentials for sync methods.
         """
-        return AzureCredential(self.get_access_token())
+        return ClientSecretCredentialSync(self.tenant_id, self.client_id, self.client_secret)
 
     def get_credential_async(self) -> AzureCredentialAIO:
         """
         Returns Azure credentials for async methods.
         """
-        return AzureCredentialAIO(self.get_access_token())
+        return ClientSecretCredentialASync(self.tenant_id, self.client_id, self.client_secret)
 
     def get_access_token(self) -> str:
         """
