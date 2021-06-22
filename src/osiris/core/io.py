@@ -38,6 +38,9 @@ def get_file_path_with_respect_to_time_resolution(date: datetime, time_resolutio
 
 
 def parse_date_str(date_str):
+    """
+    Returns the datetime and time resolution of the given date_str.
+    """
     try:
         if len(date_str) == 4:
             return pd.to_datetime(date_str, format='%Y'), TimeResolution.YEAR
@@ -52,4 +55,4 @@ def parse_date_str(date_str):
 
         raise ValueError('Wrong string format for date')
     except ValueError as error:
-        raise ValueError('Wrong string format for date: ', error)
+        raise ValueError('Wrong string format for date: ', error) from None
