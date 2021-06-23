@@ -111,6 +111,9 @@ ingress.upload_json_file(file, False)
 # With schema validation and a JSON file
 ingress.upload_json_file(file, True)
 
+# With schema validation, a JSON file and event time
+ingress.upload_json_file_event_time(file, '2021-01-01', True)
+
 # Arbitrary file
 ingress.upload_file(file)
 
