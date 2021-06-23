@@ -52,6 +52,26 @@ class Ingress:
 
         check_status_code(response)
 
+    def upload_json_file_event_time(self, file, event_time, schema_validate: bool):
+        """
+        Uploads the given JSON file to <dataset_guid> with a path corresponding to the given event
+        time.
+
+        :param file: The JSON file to upload.
+        :param event_time: Given event time. The path corresponds to this time.
+        :param schema_validate: Validate the content of the file? This requires that the validation schema is
+                                supplied to the DataPlatform.
+        """
+        response = requests.post(
+            url=f'{self.ingress_url}/{self.dataset_guid}/event_time/json',
+            files={'file': file},
+            params={'schema_validate': schema_validate,
+                    'event_time': event_time},
+            headers={'Authorization': self.client_auth.get_access_token()}
+        )
+
+        check_status_code(response)
+
     def upload_file(self, file):
         """
         Uploads the given arbitrary file to <dataset_guid>.
