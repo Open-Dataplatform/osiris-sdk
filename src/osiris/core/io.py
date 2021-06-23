@@ -55,4 +55,4 @@ def parse_date_str(date_str):
 
         raise ValueError('Wrong string format for date')
     except ValueError as error:
-        raise ValueError('Wrong string format for date: ', error) from None
+        raise ValueError('Wrong string format for date: ', error) from error
