@@ -2,7 +2,7 @@
 Osiris-egress API.
 """
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 import requests
 
@@ -39,7 +39,7 @@ class Egress:
 
     def download_json_file(self, from_date: Optional[str] = None, to_date: Optional[str] = None) -> Any:
         """
-         Download JSON file from data storage from the given date (UTC). This endpoint expects data to be
+         Download JSON file from data storage from the given time period (UTC). This endpoint expects data to be
          stored in {guid}/year={date.year:02d}/month={date.month:02d}/day={date.day:02d}/data.json'.
         """
         if to_date and from_date:
@@ -62,6 +62,72 @@ class Egress:
             url=f'{self.egress_url}/{self.dataset_guid}/json',
             headers={'Authorization': self.client_auth.get_access_token()}
         )
+        return handle_download_response(response)
+
+    def download_neptun_file(self, horizon: str, from_date: Optional[str] = None,
+                             to_date: Optional[str] = None, tags: List = None) -> Any:
+        """
+         Download Neptun file from data storage from the given time period (UTC). This method doesn't
+         need to have a GUID. The GUID is decided on the server side.
+
+         The data can be filtered by given a list of tags.
+        """
+        filters = ','.join(tags) if tags else ''
+        if to_date and from_date:
+            response = requests.get(
+                url=f'{self.egress_url}/neptun',
+                params={'horizon': horizon, 'from_date': from_date, 'to_date': to_date, 'tags': filters},
+                headers={'Authorization': self.client_auth.get_access_token()}
+            )
+            return handle_download_response(response)
+
+        if from_date:
+            response = requests.get(
+                url=f'{self.egress_url}/neptun',
+                params={'horizon': horizon, 'from_date': from_date, 'tags': filters},
+                headers={'Authorization': self.client_auth.get_access_token()}
+            )
+            return handle_download_response(response)
+
+        response = requests.get(
+            url=f'{self.egress_url}/neptun',
+            params={'horizon': horizon, 'tags': filters},
+            headers={'Authorization': self.client_auth.get_access_token()}
+        )
+
+        return handle_download_response(response)
+
+    def download_delfin_file(self, horizon: str, from_date: Optional[str] = None,
+                             to_date: Optional[str] = None, tags: List = None) -> Any:
+        """
+         Download Delfin file from data storage from the given time period (UTC). This method doesn't
+         need to have a GUID. The GUID is decided on the server side.
+
+         The data can be filtered by given a list of tags.
+        """
+        filters = ','.join(tags) if tags else ''
+        if to_date and from_date:
+            response = requests.get(
+                url=f'{self.egress_url}/delfin',
+                params={'horizon': horizon, 'from_date': from_date, 'to_date': to_date, 'tags': filters},
+                headers={'Authorization': self.client_auth.get_access_token()}
+            )
+            return handle_download_response(response)
+
+        if from_date:
+            response = requests.get(
+                url=f'{self.egress_url}/delfin',
+                params={'horizon': horizon, 'from_date': from_date, 'tags': filters},
+                headers={'Authorization': self.client_auth.get_access_token()}
+            )
+            return handle_download_response(response)
+
+        response = requests.get(
+            url=f'{self.egress_url}/delfin',
+            params={'horizon': horizon, 'tags': filters},
+            headers={'Authorization': self.client_auth.get_access_token()}
+        )
+
         return handle_download_response(response)
 
     # def download_file(self, file_date: datetime) -> bytes:

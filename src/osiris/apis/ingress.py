@@ -86,6 +86,23 @@ class Ingress:
 
         check_status_code(response)
 
+    def upload_delfin_file(self, file, event_time: str):
+        """
+        Uploads the given Delfin file to <dataset_guid>.
+
+        :param file: The Delfin file to upload.
+        :param event_time: This string must be in the form '[year]-[month]-[day]T[hour]:[minutes] and
+        decides the path where the data is stored.
+        """
+        response = requests.post(
+            url=f'{self.ingress_url}/{self.dataset_guid}/event_time/delfin',
+            files={'file': file},
+            params={'event_time': event_time},
+            headers={'Authorization': self.client_auth.get_access_token()}
+            )
+
+        check_status_code(response)
+
     def save_state(self, file):
         """
         Uploads the state file to <dataset_guid>. Can be downloaded from end-point in egress.

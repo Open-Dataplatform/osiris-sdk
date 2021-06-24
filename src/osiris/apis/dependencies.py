@@ -50,7 +50,8 @@ def check_status_code(response: Response):
         logger.error('(PermissionError) %s', detail)
         raise PermissionError(detail)
 
-    if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
+    if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR or \
+       response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
         detail = json.loads(response.text)['detail']
         logger.error('(Exception) %s', detail)
         raise Exception(detail)
