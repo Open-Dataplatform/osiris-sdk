@@ -99,7 +99,7 @@ class Ingress:
             files={'file': file},
             params={'event_time': event_time},
             headers={'Authorization': self.client_auth.get_access_token()}
-            )
+        )
 
         check_status_code(response)
 
