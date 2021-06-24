@@ -8,7 +8,7 @@ import requests
 
 from .dependencies import handle_download_response
 from ..core.azure_client_authorization import ClientAuthorization
-
+from ..core.enums import Horizon
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class Egress:
         )
         return handle_download_response(response)
 
-    def download_neptun_file(self, horizon: str, from_date: Optional[str] = None,
+    def download_neptun_file(self, horizon: Horizon, from_date: Optional[str] = None,
                              to_date: Optional[str] = None, tags: List = None) -> Any:
         """
          Download Neptun file from data storage from the given time period (UTC). This method doesn't
@@ -76,7 +76,7 @@ class Egress:
         if to_date and from_date:
             response = requests.get(
                 url=f'{self.egress_url}/neptun',
-                params={'horizon': horizon, 'from_date': from_date, 'to_date': to_date, 'tags': filters},
+                params={'horizon': horizon.name, 'from_date': from_date, 'to_date': to_date, 'tags': filters},
                 headers={'Authorization': self.client_auth.get_access_token()}
             )
             return handle_download_response(response)
@@ -84,32 +84,32 @@ class Egress:
         if from_date:
             response = requests.get(
                 url=f'{self.egress_url}/neptun',
-                params={'horizon': horizon, 'from_date': from_date, 'tags': filters},
+                params={'horizon': horizon.name, 'from_date': from_date, 'tags': filters},
                 headers={'Authorization': self.client_auth.get_access_token()}
             )
             return handle_download_response(response)
 
         response = requests.get(
             url=f'{self.egress_url}/neptun',
-            params={'horizon': horizon, 'tags': filters},
+            params={'horizon': horizon.name, 'tags': filters},
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
         return handle_download_response(response)
 
-    def download_delfin_file(self, horizon: str, from_date: Optional[str] = None,
-                             to_date: Optional[str] = None, tags: List = None) -> Any:
+    def download_delfin_file(self, horizon: Horizon, from_date: Optional[str] = None,
+                             to_date: Optional[str] = None, table_indices: List = None) -> Any:
         """
          Download Delfin file from data storage from the given time period (UTC). This method doesn't
          need to have a GUID. The GUID is decided on the server side.
 
          The data can be filtered by given a list of tags.
         """
-        filters = ','.join(tags) if tags else ''
+        filters = ','.join(table_indices) if table_indices else ''
         if to_date and from_date:
             response = requests.get(
                 url=f'{self.egress_url}/delfin',
-                params={'horizon': horizon, 'from_date': from_date, 'to_date': to_date, 'tags': filters},
+                params={'horizon': horizon.name, 'from_date': from_date, 'to_date': to_date, 'table_indices': filters},
                 headers={'Authorization': self.client_auth.get_access_token()}
             )
             return handle_download_response(response)
@@ -117,14 +117,14 @@ class Egress:
         if from_date:
             response = requests.get(
                 url=f'{self.egress_url}/delfin',
-                params={'horizon': horizon, 'from_date': from_date, 'tags': filters},
+                params={'horizon': horizon.name, 'from_date': from_date, 'table_indices': filters},
                 headers={'Authorization': self.client_auth.get_access_token()}
             )
             return handle_download_response(response)
 
         response = requests.get(
             url=f'{self.egress_url}/delfin',
-            params={'horizon': horizon, 'tags': filters},
+            params={'horizon': horizon.name, 'table_indices': filters},
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
