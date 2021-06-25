@@ -6,3 +6,4 @@ azure-storage-file-datalake
 pandas
 prometheus_client
 types-requests
+aiohttp
