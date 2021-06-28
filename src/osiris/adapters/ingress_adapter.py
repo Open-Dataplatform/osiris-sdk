@@ -7,6 +7,7 @@ import logging
 import sys
 from datetime import datetime
 from io import BytesIO
+from typing import Optional
 
 from ..apis.ingress import Ingress
 
@@ -39,7 +40,7 @@ class IngressAdapter:
         logger.debug('initialized')
 
     @abc.abstractmethod
-    def retrieve_data(self) -> bytes:
+    def retrieve_data(self) -> Optional[bytes]:
         """
         Subclasses must implement this method to provide the data to be ingested to the DataPlatform using
         this Osiris-ingress API. The data must be converted to a bytes string.
@@ -65,6 +66,10 @@ class IngressAdapter:
         """
         logger.debug('upload_json_data called')
         data = self.retrieve_data()
+
+        if not data:
+            return
+
         file = BytesIO(data)
         file.name = self.get_filename()
 
@@ -80,6 +85,10 @@ class IngressAdapter:
         with the given file extension.
         """
         data = self.retrieve_data()
+
+        if not data:
+            return
+
         file = BytesIO(data)
         file.name = self.get_filename()
 
