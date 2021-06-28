@@ -91,6 +91,13 @@ class ClientAuthorization:
     def get_credential_async(self) -> AzureCredentialAIO:
         """
         Returns Azure credentials for async methods.
+
+        Usage example (to ensure that close is called):
+        async with self.client_auth.get_credential_async() as credentials:
+            async with OsirisFileClientAsync(self.account_url,
+                                             self.filesystem_name, file_path,
+                                             credential=credentials) as file_client:
+                pass
         """
         return ClientSecretCredentialASync(self.tenant_id, self.client_id, self.client_secret)
 

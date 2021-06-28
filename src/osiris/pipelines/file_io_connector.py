@@ -9,13 +9,16 @@ import pandas as pd
 
 from apache_beam.io import OffsetRangeTracker, iobase
 from azure.core.exceptions import ResourceNotFoundError
-from azure.storage.filedatalake import DataLakeFileClient, FileSystemClient, PathProperties
+from azure.storage.filedatalake import FileSystemClient, PathProperties
 
 from .common import initialize_client_auth
 from ..core.azure_client_authorization import ClientAuthorization
 
 
 # pylint: disable=too-many-instance-attributes
+from ..core.io import OsirisFileClient
+
+
 class DatalakeFileSource(iobase.BoundedSource):  # noqa
     """
     A Class to download files from Azure Datalake
@@ -170,9 +173,9 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
                 return
 
             path = self.file_paths[i].name
-            with DataLakeFileClient(self.account_url,
-                                    self.filesystem_name, path,
-                                    credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
+            with OsirisFileClient(self.account_url,
+                                  self.filesystem_name, path,
+                                  credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
 
                 content = file_client.download_file().readall()
 
@@ -244,9 +247,9 @@ class DatalakeFileSourceWithFileName(DatalakeFileSource):  # noqa
                 return
 
             path = self.file_paths[i].name
-            with DataLakeFileClient(self.account_url,
-                                    self.filesystem_name, path,
-                                    credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
+            with OsirisFileClient(self.account_url,
+                                  self.filesystem_name, path,
+                                  credential=self.client_auth.get_credential_sync()) as file_client:  # type: ignore
                 content = file_client.download_file().readall()
 
                 file_name = os.path.basename(path)
