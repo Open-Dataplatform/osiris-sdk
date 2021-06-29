@@ -67,21 +67,6 @@ def parse_date_str(date_str):
         raise ValueError('Wrong string format for date: ', error) from error
 
 
-def singleton(cls, *args, **kw):
-    """
-    Function needed to create a singleton of a class
-    """
-    instances = {}
-
-    def _singleton():
-        if cls not in instances:
-            instances[cls] = cls(*args, **kw)
-        return instances[cls]
-
-    return _singleton
-
-
-@singleton
 class PrometheusClient:
     """
     A singleton class to ensure one instance of the class variables.
