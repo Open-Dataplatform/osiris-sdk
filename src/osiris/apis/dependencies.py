@@ -45,7 +45,7 @@ def check_status_code(response: Response):
         logger.error('(ValueError) %s', detail)
         raise ValueError(detail)
 
-    if response.status_code == HTTPStatus.FORBIDDEN:
+    if response.status_code == HTTPStatus.FORBIDDEN or HTTPStatus.UNAUTHORIZED:
         detail = json.loads(response.text)['detail']
         logger.error('(PermissionError) %s', detail)
         raise PermissionError(detail)
