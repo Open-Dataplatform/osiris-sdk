@@ -85,9 +85,10 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
     Uploads events to destination
     """
 
-    def __init__(self, datasets: DataSets):
+    def __init__(self, datasets: DataSets, parquet_execution: bool = False):
         super().__init__()
         self.datasets = datasets
+        self.parquet_execution = parquet_execution
 
     def process(self, element, *args, **kwargs):
         """
@@ -96,4 +97,7 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
         date = element[0]
         events = element[1]
 
-        self.datasets.upload_events_to_destination_json(date, events)
+        if self.parquet_execution:
+            self.datasets.upload_events_to_destination_parquet()
+        else:
+            self.datasets.upload_events_to_destination_json(date, events)
