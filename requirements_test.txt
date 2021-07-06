@@ -7,3 +7,4 @@ pandas
 prometheus_client
 types-requests
 aiohttp
+pyarrow

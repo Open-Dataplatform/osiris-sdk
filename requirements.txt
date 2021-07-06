@@ -6,3 +6,5 @@ azure-storage-file-datalake
 pandas
 prometheus_client
 aiohttp
+pyarrow
+

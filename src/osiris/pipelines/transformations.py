@@ -70,7 +70,7 @@ class JoinUniqueEventData(beam_core.DoFn, ABC):
         date = pd.to_datetime(element[0])
         events = element[1]
         try:
-            processed_events = self.datasets.read_events_from_destination(date)
+            processed_events = self.datasets.read_events_from_destination_json(date)
             joined_events = events + processed_events
             # Only keep unique elements in the list
             joined_events = [i for n, i in enumerate(joined_events) if i not in joined_events[n + 1:]]
