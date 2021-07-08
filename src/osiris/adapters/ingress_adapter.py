@@ -52,17 +52,28 @@ class IngressAdapter:
     @abc.abstractmethod
     def get_filename() -> str:
         """
-        Subclasses must implement this method to provide the filename to be used when ingesting the to the DataPlatform
+        Subclasses must implement this method to provide the filename to be used when ingesting to the DataPlatform
         using this Osiris-ingress API. The data must be converted to a bytes string.
         """
 
         # this is one example of a filename
         return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') + '.json'
 
+    @staticmethod
+    def get_event_time() -> str:
+        """
+        Subclasses must implement this method to provide the event time to be used when ingesting to the
+        DataPlatform using this Osiris-ingress API. This function only needs to be implemented if you want to
+        ingress using event time.
+        """
+
+        # this is one example of a datetime
+        return '2021-03-04T21:30:20'
+
     def upload_json_data(self, schema_validate: bool):
         """
         Makes a single run of the framework and ingest the data from the 'retrieve_data' method to the Platform
-        with the file extension .json.
+        using the upload_json endpoint
         """
         logger.debug('upload_json_data called')
         data = self.retrieve_data()
@@ -82,7 +93,7 @@ class IngressAdapter:
     def upload_data(self):
         """
         Makes a single run of the framework and ingest the data from the 'retrieve_data' method to the Platform
-        with the given file extension.
+        using the upload endpoint
         """
         data = self.retrieve_data()
 
@@ -94,6 +105,45 @@ class IngressAdapter:
 
         try:
             self.ingress.upload_file(file)
+        except Exception as error:  # pylint: disable=broad-except
+            logger.error('Exception occurred while running upload_data: %s', str(error))
+            sys.exit(-1)
+
+    def upload_json_data_event_time(self, schema_validate: bool):
+        """
+        Makes a single run of the framework and ingest the data from the 'retrieve_data' method to the Platform
+        using the json upload with a path corresponding to the given event time.
+        """
+        logger.debug('upload_json_data_event_time called')
+        data = self.retrieve_data()
+
+        if not data:
+            return
+
+        file = BytesIO(data)
+        file.name = self.get_filename()
+
+        try:
+            self.ingress.upload_json_file_event_time(file, self.get_event_time(), schema_validate)
+        except Exception as error:  # pylint: disable=broad-except
+            logger.error('Exception occurred while running upload_json_data: %s', str(error))
+            sys.exit(-1)
+
+    def upload_data_event_time(self):
+        """
+        Makes a single run of the framework and ingest the data from the 'retrieve_data' method to the Platform
+        using the upload with a path corresponding to the given event time.
+        """
+        data = self.retrieve_data()
+
+        if not data:
+            return
+
+        file = BytesIO(data)
+        file.name = self.get_filename()
+
+        try:
+            self.ingress.upload_file_event_time(file, self.get_event_time())
         except Exception as error:  # pylint: disable=broad-except
             logger.error('Exception occurred while running upload_data: %s', str(error))
             sys.exit(-1)

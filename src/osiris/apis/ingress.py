@@ -52,7 +52,7 @@ class Ingress:
 
         check_status_code(response)
 
-    def upload_json_file_event_time(self, file, event_time, schema_validate: bool):
+    def upload_json_file_event_time(self, file, event_time: str, schema_validate: bool):
         """
         Uploads the given JSON file to <dataset_guid> with a path corresponding to the given event
         time.
@@ -65,8 +65,8 @@ class Ingress:
         response = requests.post(
             url=f'{self.ingress_url}/{self.dataset_guid}/event_time/json',
             files={'file': file},
-            params={'schema_validate': schema_validate,
-                    'event_time': event_time},
+            params=[('schema_validate', schema_validate),
+                    ('event_time', event_time)],
             headers={'Authorization': self.client_auth.get_access_token()}
         )
 
@@ -86,16 +86,17 @@ class Ingress:
 
         check_status_code(response)
 
-    def upload_delfin_file(self, file, event_time: str):
+    def upload_file_event_time(self, file, event_time: str):
         """
-        Uploads the given Delfin file to <dataset_guid>.
+        Uploads the given arbitrary file to <dataset_guid> with a path corresponding to the given event
+        time.
 
-        :param file: The Delfin file to upload.
+        :param file: The arbitrary file to upload.
         :param event_time: This string must be in the form '[year]-[month]-[day]T[hour]:[minutes] and
         decides the path where the data is stored.
         """
         response = requests.post(
-            url=f'{self.ingress_url}/{self.dataset_guid}/event_time/delfin',
+            url=f'{self.ingress_url}/{self.dataset_guid}/event_time',
             files={'file': file},
             params={'event_time': event_time},
             headers={'Authorization': self.client_auth.get_access_token()}

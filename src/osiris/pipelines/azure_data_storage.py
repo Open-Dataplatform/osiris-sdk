@@ -87,7 +87,7 @@ class DataSets:
         """
         data = pd.DataFrame(events).to_parquet(engine='pyarrow', compression='snappy')
 
-        self.upload_data_to_destination(date, data, 'data.json')
+        self.upload_data_to_destination(date, data, 'data.parquet')
 
     def upload_events_to_destination_json(self, date: datetime, events: List[Dict]):
         """

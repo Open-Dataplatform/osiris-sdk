@@ -51,6 +51,8 @@ def parse_date_str(date_str):
     Returns the datetime and time resolution of the given date_str.
     """
     try:
+        if len(date_str) == 0:
+            return None, TimeResolution.NONE
         if len(date_str) == 4:
             return pd.to_datetime(date_str, format='%Y'), TimeResolution.YEAR
         if len(date_str) == 7:

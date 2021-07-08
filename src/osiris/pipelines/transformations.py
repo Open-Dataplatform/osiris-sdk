@@ -98,6 +98,6 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
         events = element[1]
 
         if self.parquet_execution:
-            self.datasets.upload_events_to_destination_parquet()
+            self.datasets.upload_events_to_destination_parquet(date, events)
         else:
             self.datasets.upload_events_to_destination_json(date, events)
