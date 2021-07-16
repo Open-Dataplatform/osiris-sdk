@@ -1,13 +1,15 @@
 """
 Module to handle pipeline for timeseries
 """
+import json
+import os
 from abc import ABC
 from datetime import datetime
-from typing import List, Tuple
+from io import BytesIO
+from typing import List
 
 import pandas as pd
 import apache_beam.transforms.core as beam_core
-from azure.core.exceptions import ResourceNotFoundError
 
 from ..core.enums import TimeResolution
 from .azure_data_storage import DataSets
@@ -53,31 +55,31 @@ class ConvertEventToTuple(beam_core.DoFn, ABC):
         raise ValueError(message)
 
 
-class JoinUniqueEventData(beam_core.DoFn, ABC):
-    """"
-    Takes a list of events and join it with processed events, if such exists, for the particular event time.
-    It will only keep unique pairs.
-    """
-    def __init__(self, datasets: DataSets):
-        super().__init__()
-
-        self.datasets = datasets
-
-    def process(self, element, *args, **kwargs) -> List[Tuple]:
-        """
-        Overwrites beam.DoFn process.
-        """
-        date = pd.to_datetime(element[0])
-        events = element[1]
-        try:
-            processed_events = self.datasets.read_events_from_destination_json(date)
-            joined_events = events + processed_events
-            # Only keep unique elements in the list
-            joined_events = [i for n, i in enumerate(joined_events) if i not in joined_events[n + 1:]]
-
-            return [(date, joined_events)]
-        except ResourceNotFoundError:
-            return [(date, events)]
+# class JoinUniqueEventData(beam_core.DoFn, ABC):
+#     """"
+#     Takes a list of events and join it with processed events, if such exists, for the particular event time.
+#     It will only keep unique pairs.
+#     """
+#     def __init__(self, datasets: DataSets):
+#         super().__init__()
+#
+#         self.datasets = datasets
+#
+#     def process(self, element, *args, **kwargs) -> List[Tuple]:
+#         """
+#         Overwrites beam.DoFn process.
+#         """
+#         date = pd.to_datetime(element[0])
+#         events = element[1]
+#         try:
+#             processed_events = self.datasets.read_events_from_destination_json(date)
+#             joined_events = events + processed_events
+#             # Only keep unique elements in the list
+#             joined_events = [i for n, i in enumerate(joined_events) if i not in joined_events[n + 1:]]
+#
+#             return [(date, joined_events)]
+#         except ResourceNotFoundError:
+#             return [(date, events)]
 
 
 class UploadEventsToDestination(beam_core.DoFn, ABC):
@@ -101,3 +103,26 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
             self.datasets.upload_events_to_destination_parquet(date, events)
         else:
             self.datasets.upload_events_to_destination_json(date, events)
+
+
+class _ConvertToDict(beam_core.DoFn, ABC):
+    """
+    Takes a list of events and converts them to a list of tuples (datetime, event)
+    """
+
+    def process(self, element, *args, **kwargs) -> List:
+        """
+        Overwrites beam.DoFn process.
+        """
+
+        path = element[0]
+        data = element[1]
+
+        _, file_extension = os.path.splitext(path)
+
+        if file_extension == '.json':
+            return [json.loads(data)]
+
+        dataframe = pd.read_parquet(BytesIO(data), engine='pyarrow')
+        # It would be better to use records.to_dict, but pandas uses narray type which JSONResponse can't handle.
+        return [json.loads(dataframe.to_json(orient='records'))]

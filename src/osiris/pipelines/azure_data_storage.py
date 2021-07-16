@@ -66,7 +66,8 @@ class DataSets:
 
         dataframe = pd.read_parquet(BytesIO(data), engine='pyarrow')
 
-        return dataframe.to_dict(orient='records')
+        # It would be better to use records.to_dict, but pandas uses narray type which JSONResponse can't handle.
+        return json.loads(dataframe.to_json(orient='records'))
 
     @initialize_client_auth
     def __read_events_from_destination(self, date: datetime, filename: str) -> bytes:
