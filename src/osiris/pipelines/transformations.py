@@ -2,7 +2,6 @@
 Module to handle pipeline for timeseries
 """
 import json
-import os
 from abc import ABC
 from datetime import datetime
 from io import BytesIO
@@ -55,42 +54,14 @@ class ConvertEventToTuple(beam_core.DoFn, ABC):
         raise ValueError(message)
 
 
-# class JoinUniqueEventData(beam_core.DoFn, ABC):
-#     """"
-#     Takes a list of events and join it with processed events, if such exists, for the particular event time.
-#     It will only keep unique pairs.
-#     """
-#     def __init__(self, datasets: DataSets):
-#         super().__init__()
-#
-#         self.datasets = datasets
-#
-#     def process(self, element, *args, **kwargs) -> List[Tuple]:
-#         """
-#         Overwrites beam.DoFn process.
-#         """
-#         date = pd.to_datetime(element[0])
-#         events = element[1]
-#         try:
-#             processed_events = self.datasets.read_events_from_destination_json(date)
-#             joined_events = events + processed_events
-#             # Only keep unique elements in the list
-#             joined_events = [i for n, i in enumerate(joined_events) if i not in joined_events[n + 1:]]
-#
-#             return [(date, joined_events)]
-#         except ResourceNotFoundError:
-#             return [(date, events)]
-
-
 class UploadEventsToDestination(beam_core.DoFn, ABC):
     """
     Uploads events to destination
     """
 
-    def __init__(self, datasets: DataSets, parquet_execution: bool = False):
+    def __init__(self, datasets: DataSets):
         super().__init__()
         self.datasets = datasets
-        self.parquet_execution = parquet_execution
 
     def process(self, element, *args, **kwargs):
         """
@@ -99,13 +70,10 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
         date = element[0]
         events = element[1]
 
-        if self.parquet_execution:
-            self.datasets.upload_events_to_destination_parquet(date, events)
-        else:
-            self.datasets.upload_events_to_destination_json(date, events)
+        self.datasets.upload_events_to_destination_parquet(date, events)
 
 
-class _ConvertToDict(beam_core.DoFn, ABC):
+class ConvertToDict(beam_core.DoFn, ABC):
     """
     Takes a list of events and converts them to a list of tuples (datetime, event)
     """
@@ -114,14 +82,7 @@ class _ConvertToDict(beam_core.DoFn, ABC):
         """
         Overwrites beam.DoFn process.
         """
-
-        path = element[0]
-        data = element[1]
-
-        _, file_extension = os.path.splitext(path)
-
-        if file_extension == '.json':
-            return [json.loads(data)]
+        data = element[0]
 
         dataframe = pd.read_parquet(BytesIO(data), engine='pyarrow')
         # It would be better to use records.to_dict, but pandas uses narray type which JSONResponse can't handle.
