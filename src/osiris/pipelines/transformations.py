@@ -82,8 +82,6 @@ class ConvertToDict(beam_core.DoFn, ABC):
         """
         Overwrites beam.DoFn process.
         """
-        data = element[0]
-
-        dataframe = pd.read_parquet(BytesIO(data), engine='pyarrow')
+        dataframe = pd.read_parquet(BytesIO(element), engine='pyarrow')
         # It would be better to use records.to_dict, but pandas uses narray type which JSONResponse can't handle.
         return [json.loads(dataframe.to_json(orient='records'))]
