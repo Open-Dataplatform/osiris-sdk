@@ -137,11 +137,7 @@ egress = Egress(egress_url=<EGRESS_URL>,
                 dataset_guid=<DATASET_GUID>)
 
 # JSON file
-file_date: date = datetime.utcnow().date(),
-content_json = egress.download_json_file(file_date)
-
-# Arbitrary file
-content_arbitrary = egress.download_file(file_date)
+content_json = egress.download_json_file('2021-01-01', '2021-01-03')
 ```
 
 ### Time series pipeline

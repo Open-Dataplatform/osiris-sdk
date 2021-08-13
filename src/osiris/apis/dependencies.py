@@ -31,6 +31,19 @@ def handle_download_response(response: Response) -> Any:
         raise ValueError(message) from JSONDecodeError
 
 
+def handle_parquet_response(response: Response) -> Any:
+    """
+     Checks status codes and converts JSON string to Python objects. Returns empty list if no result was found.
+    """
+
+    check_status_code(response)
+
+    if response.status_code == HTTPStatus.NO_CONTENT:
+        return None
+
+    return response.content
+
+
 def check_status_code(response: Response):
     """
     Converts HTTP errors to Python Exceptions
