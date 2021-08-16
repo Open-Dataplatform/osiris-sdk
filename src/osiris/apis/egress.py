@@ -141,7 +141,7 @@ class Egress:
 
          The data can be filtered by given a list of tags.
         """
-        filters = ','.join(table_indices) if table_indices else ''
+        filters = ','.join([str(index) for index in table_indices]) if table_indices else ''
 
         response = requests.get(
             url=f'{self.egress_url}/v1/delfin',
