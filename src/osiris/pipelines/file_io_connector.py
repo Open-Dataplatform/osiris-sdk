@@ -11,7 +11,6 @@ from apache_beam.io import OffsetRangeTracker, iobase
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.filedatalake import FileSystemClient, PathProperties
 
-from .common import initialize_client_auth
 from ..core.azure_client_authorization import ClientAuthorization
 
 
@@ -40,32 +39,23 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
 
     # pylint: disable=too-many-arguments
     def __init__(self,
-                 tenant_id: str,
-                 client_id: str,
-                 client_secret: str,
+                 client_auth: ClientAuthorization,
                  account_url: str,
                  filesystem_name: str,
                  guid: str,
                  ingest_time: datetime = None,
                  max_files: int = 10):
 
-        if None in [tenant_id, client_id, client_secret, account_url, filesystem_name, guid]:
+        if None in [client_auth, account_url, filesystem_name, guid]:
             raise TypeError
 
-        self.tenant_id = tenant_id
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.client_auth = client_auth
         self.account_url = account_url
         self.filesystem_name = filesystem_name
         self.guid = guid
         self.has_ingest_time = ingest_time is not None
 
-        # We need to initialize the ClientAuthorization using lazy initializing because of Beam. Beam pickles
-        # this object and pickles only allow simples values as instance variables and not objects.
-        self.client_auth = None
-
-        local_client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
-        self.file_paths = self.__get_file_paths(ingest_time, max_files, local_client_auth)
+        self.file_paths = self.__get_file_paths(ingest_time, max_files, self.client_auth.get_local_copy())
 
     def __get_file_paths(self, ingest_time: Optional[datetime], max_files: int,
                          local_client_auth: ClientAuthorization) -> List[PathProperties]:
@@ -163,7 +153,6 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
 
         return OffsetRangeTracker(start_position, stop_position)
 
-    @initialize_client_auth
     def read(self, range_tracker: OffsetRangeTracker) -> Optional[Generator]:
         """
         Returns the content of the next file
@@ -214,7 +203,7 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
         if self.has_ingest_time:
             return
 
-        local_client_auth = ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
+        local_client_auth = self.client_auth.get_local_copy()
 
         with FileSystemClient(self.account_url, self.filesystem_name,
                               credential=local_client_auth.get_credential_sync()) as filesystem_client:
@@ -230,14 +219,11 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
                 self.__save_transformation_state(filesystem_client, state)
 
 
-
-
 class DatalakeFileSourceWithFileName(DatalakeFileSource):  # noqa
     """
     A Class to download files from Azure Datalake with file name.
     """
 
-    @initialize_client_auth
     def read(self, range_tracker: OffsetRangeTracker) -> Optional[Generator]:
         """
         Returns the content of the next file.

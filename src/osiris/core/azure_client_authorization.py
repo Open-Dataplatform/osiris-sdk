@@ -3,6 +3,7 @@ Contains functions to authorize a client against Azure storage
 """
 import logging
 import time
+from typing import Optional
 
 import msal
 
@@ -72,15 +73,9 @@ class ClientAuthorization:
         self.tenant_id = tenant_id
         self.client_id = client_id
         self.client_secret = client_secret
-        self.confidential_client_app = msal.ConfidentialClientApplication(
-            authority=f'https://login.microsoftonline.com/{tenant_id}',
-            client_id=client_id,
-            client_credential=client_secret
-        )
 
+        self.confidential_client_app: Optional[msal.ConfidentialClientApplication] = None
         self.scopes = ['https://storage.azure.com/.default']
-
-        self.result = None
 
     def get_credential_sync(self) -> AzureCredential:
         """
@@ -101,10 +96,24 @@ class ClientAuthorization:
         """
         return ClientSecretCredentialASync(self.tenant_id, self.client_id, self.client_secret)
 
+    def get_local_copy(self):
+        """
+        Returns a local copy of ClientAuthorization
+        """
+        return ClientAuthorization(self.tenant_id, self.client_id, self.client_secret)
+
     def get_access_token(self) -> str:
         """
         Returns Azure access token.
         """
+        # We lazyload this in order to keep it local
+        if self.confidential_client_app is None:
+            self.confidential_client_app = msal.ConfidentialClientApplication(
+                authority=f'https://login.microsoftonline.com/{self.tenant_id}',
+                client_id=self.client_id,
+                client_credential=self.client_secret
+            )
+
         result = self.confidential_client_app.acquire_token_silent(self.scopes, account=None)
 
         if not result:

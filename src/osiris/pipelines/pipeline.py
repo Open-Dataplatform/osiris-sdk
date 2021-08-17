@@ -1,6 +1,7 @@
 """
 Module for common pipeline classes and functions
 """
+from ..core.azure_client_authorization import ClientAuthorization
 from ..core.enums import TimeResolution
 from .azure_data_storage import DataSets
 
@@ -41,5 +42,7 @@ class OsirisPipeline:
         self.source_dataset_guid = source_dataset_guid
         self.time_resolution = time_resolution
 
-        self.datasets = DataSets(tenant_id, client_id, client_secret, storage_account_url, filesystem_name,
+        client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
+
+        self.datasets = DataSets(client_auth, storage_account_url, filesystem_name,
                                  source_dataset_guid, destination_dataset_guid, time_resolution)
