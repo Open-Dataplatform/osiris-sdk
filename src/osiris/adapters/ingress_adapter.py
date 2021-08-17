@@ -10,7 +10,7 @@ from io import BytesIO
 from typing import Optional
 
 from ..apis.ingress import Ingress
-
+from ..core.azure_client_authorization import ClientAuthorization
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class IngressAdapter:
             logger.error('One or more arguments are None')
             raise TypeError
 
-        self.ingress = Ingress(ingress_url, tenant_id, client_id, client_secret, dataset_guid)
+        self.ingress = Ingress(ClientAuthorization(tenant_id, client_id, client_secret), ingress_url, dataset_guid)
         logger.debug('initialized')
 
     @abc.abstractmethod

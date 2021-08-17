@@ -16,24 +16,24 @@ class Ingress:
     """
     Contains functions for uploading data to the Osiris-ingress API.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, ingress_url: str, tenant_id: str, client_id: str, client_secret: str, dataset_guid: str):
+    def __init__(self,
+                 client_auth: ClientAuthorization,
+                 ingress_url: str,
+                 dataset_guid: str):
         """
+        :param client_auth: The Client Authorization to access the dataset.
         :param ingress_url: The URL to the Osiris-ingress API.
-        :param tenant_id: The tenant ID representing the organisation.
-        :param client_id: The client ID (a string representing a GUID).
-        :param client_secret: The client secret string.
-        :param dataset_guid: The GUID for the dataset.
+        :param dataset_guid: The GUID for the dataset if needed.
         """
-        if None in [ingress_url, tenant_id, client_id, client_secret, dataset_guid]:
+
+        if None in [client_auth, ingress_url, dataset_guid]:
             message = 'One or more of the arguments are None.'
             logger.error(message)
             raise TypeError(message)
 
+        self.client_auth = client_auth
         self.ingress_url = ingress_url
         self.dataset_guid = dataset_guid
-
-        self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
     def upload_json_file(self, file, schema_validate: bool):
         """

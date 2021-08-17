@@ -96,11 +96,15 @@ Here are some simple examples on how to use the SDK.
 The following is a simple example which shows how you can upload files using the Osiris SDK:
 ``` python
 from osiris.apis.ingress import Ingress
+from osiris.core.azure_client_authorization import ClientAuthorization
 
-ingress = Ingress(ingress_url=<INGRESS_URL>,
-                  tenant_id=<TENANT_ID>,
-                  client_id=<CLIENT_ID>,
-                  client_secret=<CLIENT_SECRET>,
+
+client_auth = ClientAuthorization(tenant_id=<TENANT_ID>,
+                                  client_id=<CLIENT_ID>,
+                                  client_secret=<CLIENT_SECRET>)
+
+ingress = Ingress(client_auth=client_auth,
+                  ingress_url=<INGRESS_URL>,
                   dataset_guid=<DATASET_GUID>)
 
 file = open('test_file.json', 'rb')
@@ -129,11 +133,15 @@ state = ingress.retrieve_state()
 The following is a simple example which shows how you can download files using the Osiris SDK:
 ``` python
 from osiris.apis.egress import Egress
+from osiris.core.azure_client_authorization import ClientAuthorization
 
-egress = Egress(egress_url=<EGRESS_URL>,
-                tenant_id=<TENANT_ID>,
-                client_id=<CLIENT_ID>,
-                client_secret=<CLIENT_SECRET>,
+
+client_auth = ClientAuthorization(tenant_id=<TENANT_ID>,
+                                  client_id=<CLIENT_ID>,
+                                  client_secret=<CLIENT_SECRET>)
+
+egress = Egress(client_auth=client_auth,
+                egress_url=<EGRESS_URL>,
                 dataset_guid=<DATASET_GUID>)
 
 # JSON file

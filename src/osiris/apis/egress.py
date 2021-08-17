@@ -13,34 +13,27 @@ from ..core.enums import Horizon
 logger = logging.getLogger(__name__)
 
 
-# pylint: disable=too-few-public-methods
 class Egress:
     """
     Contains functions for downloading data from the Osiris-egress API.
     """
-    # pylint: disable=too-many-arguments
     def __init__(self,
+                 client_auth: ClientAuthorization,
                  egress_url: str,
-                 tenant_id: str,
-                 client_id: str,
-                 client_secret: str,
                  dataset_guid: Optional[str] = None):
         """
+        :param client_auth: The Client Authorization to access the dataset.
         :param egress_url: The URL to the Osiris-egress API.
-        :param tenant_id: The tenant ID representing the organisation.
-        :param client_id: The client ID (a string representing a GUID).
-        :param client_secret: The client secret string.
         :param dataset_guid: The GUID for the dataset if needed.
         """
-        if None in [egress_url, tenant_id, client_id, client_secret]:
+        if None in [egress_url, client_auth]:
             message = 'One or more of the arguments are None.'
             logger.error(message)
             raise TypeError(message)
 
+        self.client_auth = client_auth
         self.egress_url = egress_url
         self.dataset_guid = dataset_guid
-
-        self.client_auth = ClientAuthorization(tenant_id, client_id, client_secret)
 
     def download_json_file(self, from_date: Optional[str] = None, to_date: Optional[str] = None) -> Any:
         """
