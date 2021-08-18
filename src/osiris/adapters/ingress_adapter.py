@@ -5,7 +5,6 @@ Osiris-Ingress Adapter Framework.
 import abc
 import logging
 import sys
-from datetime import datetime
 from io import BytesIO
 from typing import Optional
 
@@ -45,22 +44,21 @@ class IngressAdapter:
         Subclasses must implement this method to provide the data to be ingested to the DataPlatform using
         this Osiris-ingress API. The data must be converted to a bytes string.
         """
+        raise NotImplementedError
 
-        return b''
-
-    @staticmethod
     @abc.abstractmethod
-    def get_filename() -> str:
+    def get_filename(self) -> str:
         """
         Subclasses must implement this method to provide the filename to be used when ingesting to the DataPlatform
         using this Osiris-ingress API. The data must be converted to a bytes string.
         """
 
         # this is one example of a filename
-        return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') + '.json'
+        # return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') + '.json'
+        raise NotImplementedError
 
-    @staticmethod
-    def get_event_time() -> str:
+    @abc.abstractmethod
+    def get_event_time(self) -> str:
         """
         Subclasses must implement this method to provide the event time to be used when ingesting to the
         DataPlatform using this Osiris-ingress API. This function only needs to be implemented if you want to
@@ -68,7 +66,8 @@ class IngressAdapter:
         """
 
         # this is one example of a datetime
-        return '2021-03-04T21:30:20'
+        # return '2021-03-04T21:30:20'
+        raise NotImplementedError
 
     def upload_json_data(self, schema_validate: bool):
         """
