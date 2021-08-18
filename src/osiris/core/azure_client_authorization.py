@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 class TokenCredential(ClientSecretCredentialSync):  # pylint: disable=too-few-public-methods
     """
-    Represents a sync Credential object. This is a hack to use a access token
-    received from a client.
+    Represents a sync Credential object.
     """
     def __init__(self, token: AccessToken):
         self.token = token
@@ -31,8 +30,7 @@ class TokenCredential(ClientSecretCredentialSync):  # pylint: disable=too-few-pu
 
 class TokenCredentialAIO(ClientSecretCredentialASync):  # pylint: disable=too-few-public-methods
     """
-    Represents a async Credential object. This is a hack to use a access token
-    received from a client.
+    Represents an async Credential object.
     """
     def __init__(self, token: AccessToken):
         self.token = token
