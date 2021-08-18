@@ -1,17 +1,15 @@
 """
 Contains functions to authorize a client against Azure storage
 """
-import logging
-import time
-
 import datetime as datetime
-from typing import Optional
+import logging
 
 import msal
-
 from azure.core.credentials import AccessToken
 from azure.identity import ClientSecretCredential as ClientSecretCredentialSync
 from azure.identity.aio import ClientSecretCredential as ClientSecretCredentialASync
+from typing import Optional
+
 
 logger = logging.getLogger(__name__)
 
