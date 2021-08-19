@@ -23,17 +23,16 @@ class Dataset:
     """
     # pylint: disable=too-many-arguments
     def __init__(self,
+                 client_auth: ClientAuthorization,
                  account_url: str,
                  filesystem_name: str,
-                 guid: str,
-                 client_auth: ClientAuthorization):
-
-        self.account_url = account_url
-        self.filesystem_name = filesystem_name
-
-        self.guid = guid
+                 guid: str):
 
         self.client_auth = client_auth
+        self.account_url = account_url
+        self.filesystem_name = filesystem_name
+        self.guid = guid
+
 
     def read_file(self, file_path: str) -> bytes:
         """
