@@ -19,23 +19,41 @@ class IngressAdapter:
     This class is the basis class for Osiris-Ingress adapters. The class is implemented as a framework
     and it is the responsibility of the specific adapters who extends this class to provide the implementation
     for the method 'retrieve_data'.
+
+    The adapter has to main use cases:
+    1. Adapter -> Ingress guid -> Transformation -> Egress guid
+    2. Adapter -> Egress guid (no transformation needed)
+
+    General note:
+    The IngressAdapter handles the normal case where each run of the adapter will generate one file in a
+    Ingress guid or Egress guid (dependent on case 1 or 2).
+
+    If you need to make a more general adapter where each run makes more than one file in storage, then
+    this is not the framework to use.
+
+    Notes on case 1 and 2.
+    Case 1 (Adapter -> Ingress guid -> Transformation -> Egress guid): This is the normal case where
+    data needs a transformation afterwards. There is not a 1-1 mapping from data fetched in the adapter
+    to where in storage it should be saved.
+
+    Case 2 (Adapter -> Egress guid): This is a special case, where the data retrieved in the adapter
+    needs to be written in one specific place in storage. Please note, that if there is data already
+    it will be overwritten.
     """
     __meta__ = abc.ABCMeta
 
     # pylint: disable=too-many-arguments
-    def __init__(self, ingress_url: str, tenant_id: str, client_id: str, client_secret: str, dataset_guid: str):
+    def __init__(self, client_auth: ClientAuthorization, ingress_url: str, dataset_guid: str):
         """
+        :param client_auth: The Client Authorization to access the dataset.
         :param ingress_url: The URL to the Osiris-ingress API.
-        :param tenant_id: The tenant ID representing the organisation.
-        :param client_id: The client ID (a string representing a GUID).
-        :param client_secret: The client secret string.
         :param dataset_guid: The GUID for the dataset.
         """
-        if None in [ingress_url, tenant_id, client_id, client_secret, dataset_guid]:
+        if None in [client_auth, ingress_url, dataset_guid]:
             logger.error('One or more arguments are None')
             raise TypeError
 
-        self.ingress = Ingress(ClientAuthorization(tenant_id, client_id, client_secret), ingress_url, dataset_guid)
+        self.ingress = Ingress(client_auth, ingress_url, dataset_guid)
         logger.debug('initialized')
 
     @abc.abstractmethod
