@@ -77,13 +77,13 @@ class ClientAuthorization:
         self.confidential_client_app: Optional[msal.ConfidentialClientApplication] = None
         self.scopes = ['https://storage.azure.com/.default']
 
-    def get_credential_sync(self) -> AzureCredential:
+    def get_credential_sync(self) -> ClientSecretCredentialSync:
         """
         Returns Azure credentials for sync methods.
         """
         return ClientSecretCredentialSync(self.tenant_id, self.client_id, self.client_secret)
 
-    def get_credential_async(self) -> AzureCredentialAIO:
+    def get_credential_async(self) -> ClientSecretCredentialASync:
         """
         Returns Azure credentials for async methods.
 
