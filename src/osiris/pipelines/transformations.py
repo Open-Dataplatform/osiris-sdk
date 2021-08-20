@@ -71,7 +71,6 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
         """
         date = element[0]
         events = element[1]
-        # .upload_events_to_destination_parquet(date, events)
 
         data = pd.DataFrame(events).to_parquet(engine='pyarrow', compression='snappy')
         sub_file_path = get_file_path_with_respect_to_time_resolution(date, self.time_resolution, 'data.parquet')
