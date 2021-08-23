@@ -8,8 +8,7 @@ import msal
 from azure.core.credentials import AccessToken
 from azure.identity import ClientSecretCredential as ClientSecretCredentialSync
 from azure.identity.aio import ClientSecretCredential as ClientSecretCredentialASync
-from typing import Optional
-
+from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class ClientAuthorization:
             return TokenCredential(self.access_token)
         return ClientSecretCredentialSync(self.tenant_id, self.client_id, self.client_secret)
 
-    def get_credential_async(self) -> ClientSecretCredentialASync:
+    def get_credential_async(self) -> Union[ClientSecretCredentialASync, TokenCredentialAIO]:
         """
         Returns Azure credentials for async methods.
 
