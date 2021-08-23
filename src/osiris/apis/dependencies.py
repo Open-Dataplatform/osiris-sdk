@@ -44,6 +44,16 @@ def handle_parquet_response(response: Response) -> Any:
     return response.content
 
 
+def __get_detail(response: str):
+    try:
+        detail = json.loads(response)
+        if isinstance(detail, dict) and 'detail' in detail:
+            return detail['detail']
+        return response
+    except JSONDecodeError:
+        return response
+
+
 def check_status_code(response: Response):
     """
     Converts HTTP errors to Python Exceptions
@@ -56,23 +66,23 @@ def check_status_code(response: Response):
         raise Exception(detail)
 
     if response.status_code == HTTPStatus.NOT_FOUND:
-        detail = json.loads(response.text)['detail']
+        detail = __get_detail(response.text)
         logger.error('(FileNotFoundError) %s', detail)
         raise FileNotFoundError(detail)
 
     if response.status_code == HTTPStatus.BAD_REQUEST:
-        detail = json.loads(response.text)['detail']
+        detail = __get_detail(response.text)
         logger.error('(ValueError) %s', detail)
         raise ValueError(detail)
 
     if response.status_code == HTTPStatus.FORBIDDEN or \
        response.status_code == HTTPStatus.UNAUTHORIZED:
-        detail = json.loads(response.text)['detail']
+        detail = __get_detail(response.text)
         logger.error('(PermissionError) %s', detail)
         raise PermissionError(detail)
 
     if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR or \
        response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-        detail = json.loads(response.text)['detail']
+        detail = __get_detail(response.text)
         logger.error('(Exception) %s', detail)
         raise Exception(detail)
