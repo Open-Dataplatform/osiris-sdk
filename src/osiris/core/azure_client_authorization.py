@@ -47,7 +47,7 @@ class ClientAuthorization:
     Class to authenticate client against Azure storage. Uses EITHER a service principal approach with tenant id,
     client id and client secret OR a supplied access token.
     """
-    def __init__(self, tenant_id: str, client_id: str, client_secret: str, access_token: AccessToken = None):
+    def __init__(self, tenant_id: str = None, client_id: str = None, client_secret: str = None, access_token: AccessToken = None):
         """
         :param tenant_id: The tenant ID representing the organisation.
         :param client_id: The client ID (a string representing a GUID).
@@ -62,7 +62,7 @@ class ClientAuthorization:
         self.confidential_client_app: Optional[msal.ConfidentialClientApplication] = None
         self.scopes = ['https://storage.azure.com/.default']
         if access_token:
-            if None not in [tenant_id, client_id, client_secret]:
+            if any([tenant_id, client_id, client_secret]):
                 logger.error("Client Authorization must be done with either access token OR tenant_id, client_id " +
                              "and client_secret. Cannot use both approaches")
                 raise TypeError
@@ -78,7 +78,7 @@ class ClientAuthorization:
                     "tenant_id should be an Azure Active Directory tenant's id (also called its 'directory id')"
                 )
 
-    def get_credential_sync(self) -> ClientSecretCredentialSync:
+    def get_credential_sync(self) -> Union[ClientSecretCredentialSync, TokenCredential]:
         """
         Returns Azure credentials for sync methods.
         """
