@@ -11,7 +11,8 @@ import pandas as pd
 import apache_beam.transforms.core as beam_core
 
 from ..core.enums import TimeResolution
-from .azure_data_storage import DataSets
+from .azure_data_storage import Dataset
+from ..core.io import get_file_path_with_respect_to_time_resolution
 
 
 class ConvertEventToTuple(beam_core.DoFn, ABC):
@@ -59,9 +60,10 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
     Uploads events to destination
     """
 
-    def __init__(self, datasets: DataSets):
+    def __init__(self, dataset: Dataset, time_resolution: TimeResolution):
         super().__init__()
-        self.datasets = datasets
+        self.dataset = dataset
+        self.time_resolution = time_resolution
 
     def process(self, element, *args, **kwargs):
         """
@@ -70,7 +72,10 @@ class UploadEventsToDestination(beam_core.DoFn, ABC):
         date = element[0]
         events = element[1]
 
-        self.datasets.upload_events_to_destination_parquet(date, events)
+        data = pd.DataFrame(events).to_parquet(engine='pyarrow', compression='snappy')
+        sub_file_path = get_file_path_with_respect_to_time_resolution(date, self.time_resolution, 'data.parquet')
+        file_path = f'{sub_file_path}'
+        self.dataset.upload_file(file_path, BytesIO(data))
 
 
 class ConvertToDict(beam_core.DoFn, ABC):

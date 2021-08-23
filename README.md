@@ -11,8 +11,6 @@
 - [Usage](#usage)
   - [Upload](#upload)
   - [Download](#download)
-  - [Time series pipeline](#time-series-pipeline)
-  - [Data conversion pipeline](#data-conversion-pipeline)
   - [Ingress Adapter](#ingress-adapter)
 
 
@@ -148,51 +146,6 @@ egress = Egress(client_auth=client_auth,
 content_json = egress.download_json_file('2021-01-01', '2021-01-03')
 ```
 
-### Time series pipeline
-The following is a simple example which shows how you can create a time series pipeline.
-``` python
-from osiris.pipelines.pipeline_timeseries import PipelineTimeSeries
-
-pipeline = PipelineTimeSeries(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
-                              filesystem_name=<CONTAINER_NAME>,
-                              tenant_id=<TENANT_ID>,
-                              client_id=<CLIENT_ID>,
-                              client_secret=<CLIENT_SECRET>,
-                              source_dataset_guid=<DATASET_GUID>,
-                              destination_dataset_guid=<DATASET_GUID>,
-                              date_format=<DATE_FORMAT_FOR_DATE_FIELD>,  # Example: "%Y-%m-%dT%H:%M:%S.%fZ"
-                              date_key_name=<FIELD_NAME_FOR_EVENT_TIME>)
-
-# Running the pipeline with current time
-pipeline.transform_ingest_time_to_event_time_daily()
-
-# Running the pipeline with specific time
-ingest_time = datetime.datetime(2021, 04, 08, 12, 0, 0)  # April 4th, 2021 at 12:00:00
-pipeline.transform_ingest_time_to_event_time_daily(ingest_time=ingest_time)
-```
-
-### Data conversion pipeline
-This is an example of using the data conversion classes to transform structured data into other formats
-of structured data.
-``` python
-from osiris.pipelines.pipeline_conversion import PipelineConversion
-
-pipeline = PipelineConversion(storage_account_url=<AZURE_STORAGE_ACCOUNT_URL>,
-                              filesystem_name=<CONTAINER_NAME>,
-                              tenant_id=<TENANT_ID>,
-                              client_id=<CLIENT_ID>,
-                              client_secret=<CLIENT_SECRET>,
-                              source_dataset_guid=<DATASET_GUID>,
-                              destination_dataset_guid=<DATASET_GUID>)
-
-# Running the pipeline with current time, using method defaults
-pipeline.transform_convert_csv_to_json()
-
-# Running the pipeline with specific time and tab as CSV separator
-ingest_time = datetime.datetime(2021, 04, 08, 12, 0, 0)  # April 4th, 2021 at 12:00:00
-pipeline.transform_convert_csv_to_json(ingest_time=ingest_time, separator='\t')
-```
-
 ### Ingress Adapter
 The following is a simple example which shows how you can create a new ingress adapter.
 ``` python
@@ -206,10 +159,12 @@ class MyAdapter(IngressAdapter):
 
 
 def main():
-    adapter = MyAdapter(ingress_url=<INGRESS_URL>,
-                        tenant_id=<TENANT_ID>,
-                        client_id=<CLIENT_ID>,
-                        client_secret=<CLIENT_SECRET>,
+    client_auth = ClientAuthorization(tenant_id=<TENANT_ID>,
+                                      client_id=<CLIENT_ID>,
+                                      client_secret=<CLIENT_SECRET>)
+
+    adapter = MyAdapter(client_auth=client_auth,
+                        ingress_url=<INGRESS_URL>,
                         dataset_guid=<DATASET_GUID>)
 
     # as json data

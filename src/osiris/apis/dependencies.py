@@ -48,6 +48,13 @@ def check_status_code(response: Response):
     """
     Converts HTTP errors to Python Exceptions
     """
+    if response.status_code == HTTPStatus.BAD_GATEWAY:
+        # The response in response.text gives only 502 Bad Gateway in HTML
+        # This is often caused by processing too much data in Egress-API
+        detail = '(502 Bad Gateway) Often caused by too large dataset request - try to limit date range requested'
+        logger.error('(Bad gateway) %s', response.text)
+        raise Exception(detail)
+
     if response.status_code == HTTPStatus.NOT_FOUND:
         detail = json.loads(response.text)['detail']
         logger.error('(FileNotFoundError) %s', detail)
