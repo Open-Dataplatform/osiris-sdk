@@ -1,14 +1,14 @@
 """
 Contains functions to authorize a client against Azure storage
 """
-import datetime as datetime
+import datetime
 import logging
+from typing import Optional, Union
 
 import msal
 from azure.core.credentials import AccessToken
 from azure.identity import ClientSecretCredential as ClientSecretCredentialSync
 from azure.identity.aio import ClientSecretCredential as ClientSecretCredentialASync
-from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +18,8 @@ class TokenCredential(ClientSecretCredentialSync):  # pylint: disable=too-few-pu
     Represents a sync Credential object.
     """
     def __init__(self, token: AccessToken):
+        # We really don't want to call super since that would fail on asserts and provides no added value
+        # pylint: disable=W0231
         self.token = token
 
     def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
@@ -32,6 +34,8 @@ class TokenCredentialAIO(ClientSecretCredentialASync):  # pylint: disable=too-fe
     Represents an async Credential object.
     """
     def __init__(self, token: AccessToken):
+        # We really don't want to call super since that would fail on asserts and provides no added value
+        # pylint: disable=W0231
         self.token = token
 
     async def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
@@ -46,7 +50,8 @@ class ClientAuthorization:
     Class to authenticate client against Azure storage. Uses EITHER a service principal approach with tenant id,
     client id and client secret OR a supplied access token.
     """
-    def __init__(self, tenant_id: str = None, client_id: str = None, client_secret: str = None, access_token: AccessToken = None):
+    def __init__(self, tenant_id: str = None, client_id: str = None, client_secret: str = None,
+                 access_token: AccessToken = None):
         """
         :param tenant_id: The tenant ID representing the organisation.
         :param client_id: The client ID (a string representing a GUID).
@@ -62,11 +67,10 @@ class ClientAuthorization:
         self.scopes = ['https://storage.azure.com/.default']
         if access_token:
             if any([tenant_id, client_id, client_secret]):
-                logger.error("Client Authorization must be done with either access token OR tenant_id, client_id " +
-                             "and client_secret. Cannot use both approaches")
-                raise TypeError
+                raise TypeError("Client Authorization must be done with either access token OR tenant_id, client_id "
+                                "and client_secret. Cannot use both approaches")
             expire_date = datetime.datetime.fromtimestamp(access_token.expires_on)
-            logger.info(f'Using access token value for client authorization. It expires at {expire_date}')
+            logger.info('Using access token value for client authorization. It expires at %s', expire_date)
         else:
             if not client_id:
                 raise ValueError("client_id should be the id of an Azure Active Directory application")
