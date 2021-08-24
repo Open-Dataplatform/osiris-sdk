@@ -1,7 +1,6 @@
 """
 Contains functions to authorize a client against Azure storage
 """
-import datetime
 import logging
 import time
 from typing import Optional, Union
@@ -64,12 +63,12 @@ class ClientAuthorization:
     client id and client secret OR a supplied access token.
     """
     def __init__(self, tenant_id: str = None, client_id: str = None, client_secret: str = None,
-                 access_token: AccessToken = None):
+                 access_token: str = None):
         """
         :param tenant_id: The tenant ID representing the organisation.
         :param client_id: The client ID (a string representing a GUID).
         :param client_secret: The client secret string.
-        :param access_token: An access token directly provided by the caller
+        :param access_token: An access token directly provided by the caller.
         """
         self.tenant_id = tenant_id
         self.client_id = client_id
@@ -82,8 +81,7 @@ class ClientAuthorization:
             if any([tenant_id, client_id, client_secret]):
                 raise TypeError("Client Authorization must be done with either access token OR tenant_id, client_id "
                                 "and client_secret. Cannot use both approaches")
-            expire_date = datetime.datetime.fromtimestamp(access_token.expires_on)
-            logger.info('Using access token value for client authorization. It expires at %s', expire_date)
+            logger.info('Using access token value for client authorization')
         else:
             if not client_id:
                 raise ValueError("client_id should be the id of an Azure Active Directory application")
@@ -128,7 +126,7 @@ class ClientAuthorization:
         Returns Azure access token.
         """
         if self.access_token:
-            return self.access_token.token
+            return self.access_token
 
         # We lazyload this in order to keep it local
         if self.confidential_client_app is None:
