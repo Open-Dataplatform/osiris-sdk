@@ -3,6 +3,7 @@ Contains functions to authorize a client against Azure storage
 """
 import datetime
 import logging
+import time
 from typing import Optional, Union
 
 import msal
@@ -17,10 +18,16 @@ class TokenCredential(ClientSecretCredentialSync):  # pylint: disable=too-few-pu
     """
     Represents a sync Credential object.
     """
-    def __init__(self, token: AccessToken):
+
+    # NOTE: 1 hour doesn't necessarily correspond to the token lifetime,
+    # however it doesn't matter as we don't use the value, and calls will fail (as intended) when it expires
+    EXPIRES_IN = 3600
+
+    def __init__(self, token: str):
         # We really don't want to call super since that would fail on asserts and provides no added value
         # pylint: disable=W0231
-        self.token = token
+        expires_on = int(self.EXPIRES_IN + time.time())
+        self.token = AccessToken(token, expires_on)
 
     def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
         """
@@ -33,10 +40,16 @@ class TokenCredentialAIO(ClientSecretCredentialASync):  # pylint: disable=too-fe
     """
     Represents an async Credential object.
     """
-    def __init__(self, token: AccessToken):
+
+    # NOTE: 1 hour doesn't necessarily correspond to the token lifetime,
+    # however it doesn't matter as we don't use the value, and calls will fail (as intended) when it expires
+    EXPIRES_IN = 3600
+
+    def __init__(self, token: str):
         # We really don't want to call super since that would fail on asserts and provides no added value
         # pylint: disable=W0231
-        self.token = token
+        expires_on = int(self.EXPIRES_IN + time.time())
+        self.token = AccessToken(token, expires_on)
 
     async def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
         """
