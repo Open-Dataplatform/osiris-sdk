@@ -13,48 +13,52 @@ from azure.identity.aio import ClientSecretCredential as ClientSecretCredentialA
 logger = logging.getLogger(__name__)
 
 
-class TokenCredential(ClientSecretCredentialSync):  # pylint: disable=too-few-public-methods
+class AzureCredential:  # pylint: disable=too-few-public-methods
     """
-    Represents a sync Credential object.
+    Represents a sync Credential object. This is a hack to use a access token
+    received from a client.
     """
 
-    # NOTE: 1 hour doesn't necessarily correspond to the token lifetime,
-    # however it doesn't matter as we don't use the value, and calls will fail (as intended) when it expires
+    # NOTE: This doesn't necessarily correspond to the token lifetime,
+    # however it doesn't matter as it gets recreated per request
     EXPIRES_IN = 3600
 
     def __init__(self, token: str):
-        # We really don't want to call super since that would fail on asserts and provides no added value
-        # pylint: disable=W0231
-        expires_on = int(self.EXPIRES_IN + time.time())
-        self.token = AccessToken(token, expires_on)
+        self.token = token
+        self.expires_on = int(self.EXPIRES_IN + time.time())
 
     def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
         """
-        Returns an AccessToken object.
+        Returns an AcccesToken object.
         """
-        return self.token
+        return AccessToken(self.token, self.expires_on)
 
 
-class TokenCredentialAIO(ClientSecretCredentialASync):  # pylint: disable=too-few-public-methods
+class AzureCredentialAIO:  # pylint: disable=too-few-public-methods
     """
-    Represents an async Credential object.
+    Represents a async Credential object. This is a hack to use a access token
+    received from a client.
     """
 
-    # NOTE: 1 hour doesn't necessarily correspond to the token lifetime,
-    # however it doesn't matter as we don't use the value, and calls will fail (as intended) when it expires
+    # NOTE: This doesn't necessarily correspond to the token lifetime,
+    # however it doesn't matter as it gets recreated per request
     EXPIRES_IN = 3600
 
     def __init__(self, token: str):
-        # We really don't want to call super since that would fail on asserts and provides no added value
-        # pylint: disable=W0231
-        expires_on = int(self.EXPIRES_IN + time.time())
-        self.token = AccessToken(token, expires_on)
+        self.token = token
+        self.expires_on = int(self.EXPIRES_IN + time.time())
 
     async def get_token(self, *scopes, **kwargs) -> AccessToken:  # pylint: disable=unused-argument
         """
-        Returns an AccessToken object.
+        Returns an AcccesToken object.
         """
-        return self.token
+        return AccessToken(self.token, self.expires_on)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        pass
 
 
 class ClientAuthorization:
@@ -92,15 +96,15 @@ class ClientAuthorization:
                     "tenant_id should be an Azure Active Directory tenant's id (also called its 'directory id')"
                 )
 
-    def get_credential_sync(self) -> Union[ClientSecretCredentialSync, TokenCredential]:
+    def get_credential_sync(self) -> Union[ClientSecretCredentialSync, AzureCredential]:
         """
         Returns Azure credentials for sync methods.
         """
         if self.access_token:
-            return TokenCredential(self.access_token)
+            return AzureCredential(self.access_token)
         return ClientSecretCredentialSync(self.tenant_id, self.client_id, self.client_secret)
 
-    def get_credential_async(self) -> Union[ClientSecretCredentialASync, TokenCredentialAIO]:
+    def get_credential_async(self) -> Union[ClientSecretCredentialASync, AzureCredentialAIO]:
         """
         Returns Azure credentials for async methods.
 
@@ -112,7 +116,7 @@ class ClientAuthorization:
                 pass
         """
         if self.access_token:
-            return TokenCredentialAIO(self.access_token)
+            return AzureCredentialAIO(self.access_token)
         return ClientSecretCredentialASync(self.tenant_id, self.client_id, self.client_secret)
 
     def get_local_copy(self):
