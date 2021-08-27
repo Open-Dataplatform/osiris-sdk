@@ -85,14 +85,13 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
         state = self.__retrieve_transformation_state(filesystem_client)
 
         if not state:
-            now = datetime.utcnow()
-            folder_path = f'{self.guid}/year={now.year}/month={now.month:02d}/day={now.day:02d}/hour={now.hour:02d}'
-
-            paths = self.__get_file_paths_from_folder(folder_path, filesystem_client)
-
-            return paths[:max_files]
-
+            state['last_successful_run'] = '1970-01-01T00:00:00'
+            state['processed_files'] = []
         # There is a state file:
+        if 'processed_files' in state:
+            self.processed_files = state['processed_files']
+        else:
+            self.processed_files = []
 
         last_successful_run = datetime.strptime(state['last_successful_run'], '%Y-%m-%dT%H:%M:%S')
         now = datetime.utcnow()
@@ -106,13 +105,16 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
             temp_paths = self.__get_file_paths_from_folder(folder_path, filesystem_client)
 
             for path in temp_paths:
-                if path.last_modified > last_successful_run:
+                if path.last_modified >= last_successful_run and path.name not in self.processed_files:
                     paths.append(path)
 
             if len(paths) > max_files:
                 break
 
-        return paths[:max_files]
+        paths_return = paths[:max_files]
+        self.processed_files.extend([path.name for path in paths_return])
+
+        return paths_return
 
     def __retrieve_transformation_state(self, filesystem_client: FileSystemClient) -> Optional[Dict]:
         with filesystem_client.get_file_client(f'{self.guid}/{self.STATE_FILE}') as file_client:
@@ -216,6 +218,9 @@ class DatalakeFileSource(iobase.BoundedSource):  # noqa
             if len(self.file_paths):
                 latest_modified = self.file_paths[-1].last_modified  # file_paths is sorted ascending.
                 state['last_successful_run'] = latest_modified.isoformat()
+                # Keep last 10 files (we assume that the last 10 files cannot be written in the same second)
+                # This should probably be a variable set to 10
+                state['processed_files'] = [path for path in self.processed_files[-10:]]
                 self.__save_transformation_state(filesystem_client, state)
 
 
